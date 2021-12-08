@@ -567,6 +567,7 @@ if __name__ == "__main__":
                               batch_time=batch_time.avg,
                               acc=float(acc.avg.asnumpy() * 100)
                             ))
+                log_file.flush()
 
         ########################################################################
         # Epoch Evaluation

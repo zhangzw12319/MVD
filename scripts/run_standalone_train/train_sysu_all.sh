@@ -15,7 +15,7 @@ python train.py \
 --optim adam \
 --lr 0.00035 \
 --device-target GPU \
---gpu 1 \
+--gpu 2 \
 --pretrain "/home/shz/pytorch/zzw/DDAG_mindspore/model/pretrain/resnet50_ascend_v111_imagenet2012_official_cv_bs32_acc76/resnet50.ckpt" \
 --tag "sysu_all" \
 --loss-func "id+tri" \
