@@ -8,10 +8,10 @@ Developer List:
 
 import os
 import os.path as osp
-import time
-
 import argparse
+import time
 import numpy as np
+
 import mindspore as ms
 import mindspore.nn as nn
 import mindspore.ops as P
@@ -29,14 +29,15 @@ from mindspore.nn import SGD, Adam
 from PIL import Image
 from tqdm import tqdm
 
-from data.data_loader import SYSUDatasetGenerator, RegDBDatasetGenerator, TestData
-from data.data_manager import process_gallery_sysu, process_query_sysu, process_test_regdb
-from model.eval import test
-from model.lr_generator import LRScheduler
-from model.model_main import MVD
-from model.trainingcell import CriterionWithNet, OptimizerWithNetAndCriterion
-from utils.loss import OriTripletLoss, CenterTripletLoss
-from utils.utils import IdentitySampler, genidx, AverageMeter, get_param_list
+from src.dataset import SYSUDatasetGenerator, RegDBDatasetGenerator,\
+    TestData, process_gallery_sysu, process_query_sysu, process_test_regdb,\
+    genidx
+from src.evalfunc import test 
+from src.models.mvd import MVD
+from src.models.trainingcell import CriterionWithNet, OptimizerWithNetAndCriterion
+from src.loss import OriTripletLoss, CenterTripletLoss
+from src.utils import IdentitySampler, genidx, AverageMeter, get_param_list,\
+     LRScheduler
 
 
 def get_parser():
@@ -52,7 +53,7 @@ def get_parser():
     # Only used on Huawei Cloud OBS service,
     # when this is set, --data_path is overridden by --data-url
     psr.add_argument("--data-url", type=str, default=None)
-    psr.add_argument('--batch-size', default=8, type=int,
+    psr.add_argument('--batch-size', default=4, type=int,
                      metavar='B', help='the number of person IDs in a batch')
     psr.add_argument('--test-batch', default=64, type=int,
                      metavar='tb', help='testing batch size')
@@ -60,8 +61,6 @@ def get_parser():
                      help='num of pos per identity in each modality')
     psr.add_argument('--trial', default=1, type=int,
                      metavar='t', help='trial (only for RegDB dataset)')
-    psr.add_argument('--debug', default="no", choices=["yes", "no"],
-                     help='if set yes, use demo dataset for debugging,(only for SYSU dataset)')
 
 
     # image transform
@@ -79,8 +78,6 @@ def get_parser():
 
 
     # loss setting
-    psr.add_argument('--epoch', default=80, type=int,
-                     metavar='epoch', help='epoch num')
     psr.add_argument('--loss-func', default="id+tri", type=str,
                      help='specify loss function type', choices=["id", "id+tri", "id+tri+kldiv"])
     psr.add_argument('--drop', default=0.2, type=float,
@@ -104,8 +101,12 @@ def get_parser():
                      help=r'lr_{epoch} = args.decay_factor * lr_{epoch - 1}')
 
     # training configs
-    psr.add_argument('--device-target', default="CPU",
-                     choices=["CPU", "GPU", "Ascend"])
+    psr.add_argument('--epoch', default=80, type=int,
+                     metavar='epoch', help='epoch num')
+    psr.add_argument('--start-epoch', default=1, type=int,
+                     help='start training epoch')
+    psr.add_argument('--device-target', default="GPU",
+                     choices=["GPU", "Ascend"])
     psr.add_argument('--gpu', default='0', type=str,
                      help='set CUDA_VISIBLE_DEVICES')
 
@@ -207,7 +208,7 @@ def optim(epoch_, backbone_lr_scheduler_, head_lr_scheduler_):
             {'params': net.ir_bottleneck.trainable_params(), 'lr': head_lr},
             {'params': net.shared_bottleneck.trainable_params(), 'lr': head_lr},
         ],
-                     learning_rate=args.lr, weight_decay=5e-4)
+            learning_rate=args.lr, weight_decay=5e-4)
 
     return opt_p
 
@@ -224,7 +225,8 @@ if __name__ == "__main__":
     ########################################################################
     device = args.device_target
     # init context
-    context.set_context(mode=context.PYNATIVE_MODE, device_target=device, save_graphs=False)
+    # context.set_context(mode=context.PYNATIVE_MODE, device_target=device, save_graphs=False)
+    context.set_context(mode=context.GRAPH_MODE, device_target=device, save_graphs=False)
 
     if device == "CPU":
         LOCAL_DATA_PATH = args.data_path
@@ -304,13 +306,11 @@ if __name__ == "__main__":
     dataset_type = args.dataset
 
     if dataset_type == "SYSU":
-        # Default: infrared to visible(1->2) + All Search
         data_path = args.data_path
     elif dataset_type == "RegDB":
-        # Default: visible to infrared(2->1)
         data_path = args.data_path
 
-    START_EPOCH = 1
+    START_EPOCH = args.start_epoch
     start_time = time.time()
 
     print("==> Loading data")
@@ -352,11 +352,9 @@ if __name__ == "__main__":
         ]
     )
 
-    ifDebug_dic = {"yes": True, "no": False}
     if dataset_type == "SYSU":
         # train_set
-        trainset_generator = SYSUDatasetGenerator(data_dir=data_path,\
-            ifDebug=ifDebug_dic.get(args.debug))
+        trainset_generator = SYSUDatasetGenerator(data_dir=data_path)
         color_pos, thermal_pos = genidx(trainset_generator.train_color_label,\
             trainset_generator.train_thermal_label)
 
@@ -387,10 +385,8 @@ if __name__ == "__main__":
     # Create Query && Gallery
     ########################################################################
 
-    gallset_generator = TestData(gall_img, gall_label, img_size=(args.img_w, args.img_h),\
-        transform=transform_test)
-    queryset_generator = TestData(query_img, query_label, img_size=(args.img_w, args.img_h),\
-        transform=transform_test)
+    gallset_generator = TestData(gall_img, gall_label, img_size=(args.img_w, args.img_h))
+    queryset_generator = TestData(query_img, query_label, img_size=(args.img_w, args.img_h))
 
     print_dataset_info(dataset_type, trainset_generator, query_label, gall_label, start_time)
 
@@ -427,18 +423,18 @@ if __name__ == "__main__":
     ########################################################################
     CELossNet = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction="mean")
     OriTripLossNet = OriTripletLoss(margin=args.margin, batch_size=2 * loader_batch)
-    CenterTripletLoss = CenterTripletLoss(margin=args.margin, batch_size=2 * loader_batch)
+    CenterTripLossNet = CenterTripletLoss(margin=args.margin, batch_size=2 * loader_batch)
     KL_Div = P.KLDivLoss()
     # TripLossNet = TripletLoss(margin=args.margin)
 
     net_with_criterion = CriterionWithNet(net, CELossNet,\
-            CenterTripletLoss, KL_Div, loss_func=args.loss_func)
+            OriTripLossNet, KL_Div, loss_func=args.loss_func)
 
     ########################################################################
     # Define schedulers
     ########################################################################
 
-    assert (args.start_decay >= args.warmup_steps + 10) and (args.start_decay < args.end_decay) \
+    assert (args.start_decay > args.warmup_steps) and (args.start_decay < args.end_decay) \
          and (args.end_decay < args.epoch)
 
     backbone_lr_scheduler = LRScheduler(args.lr, args.warmup_steps,\
@@ -506,10 +502,23 @@ if __name__ == "__main__":
         id_loss = AverageMeter()
         tri_loss = AverageMeter()
 
+
         ########################################################################
         # Batch Training
         ########################################################################
-
+        time_msg = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+        print('==>' + time_msg)
+        print('==>' + time_msg, file=log_file)
+        print('==> Start Training...')
+        print('==> Start Training...', file=log_file)
+        log_file.flush()
+        
+        BEST_MAP = 0.0
+        BEST_R1 = 0.0
+        BEST_EPOCH = 0
+        best_param_list = None
+        best_path = None
+        
         for BATCH_IDX, (img1, img2, label1, label2) in enumerate(tqdm(dataset_helper)):
             label1 = ms.Tensor(label1, dtype=ms.float32)
             label2 = ms.Tensor(label2, dtype=ms.float32)
@@ -533,31 +542,31 @@ if __name__ == "__main__":
                       'Batch Time:{batch_time:.2f}  '
                       'Accuracy:{acc:.2f}   '
                       .format(epoch, BATCH_IDX, total_batch,\
-                            CLR=float(backbone_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
-                              HLR=float(head_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
-                              Loss=float(loss.asnumpy()),
-                              id=float(id_loss.avg),
-                              tri=float(tri_loss.avg),
-                              batch_time=batch_time.avg,
-                              acc=acc.avg * 100
-                              ))
-                print('Epoch: [{}][{}/{}]   '
-                      'Convolution LR: {CLR:.7f}   '
-                      'IB & Classifier LR: {HLR:.7f}    '
-                      'Loss:{Loss:.4f}   '
-                      'id:{id:.4f}   '
-                      'tri:{tri:.4f}   '
-                      'Batch Time:{batch_time:.3f}  '
-                      'Accuracy:{acc:.4f}   '
-                      .format(epoch, BATCH_IDX, total_batch,
                               CLR=float(backbone_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
                               HLR=float(head_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
                               Loss=float(loss.asnumpy()),
                               id=float(id_loss.avg),
                               tri=float(tri_loss.avg),
                               batch_time=batch_time.avg,
-                              acc=acc.avg * 100),
-                      file=log_file)
+                              acc=float(acc.avg.asnumpy() * 100)
+                            ))
+                print('Epoch: [{}][{}/{}]   '
+                      'Convolution LR: {CLR:.7f}   '
+                      'IB & Classifier LR: {HLR:.7f}    '
+                      'Loss:{Loss:.4f}   '
+                      'id:{id:.4f}   '
+                      'tri:{tri:.4f}   '
+                      'Batch Time:{batch_time:.2f}  '
+                      'Accuracy:{acc:.2f}   '
+                      .format(epoch, BATCH_IDX, total_batch,\
+                              CLR=float(backbone_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
+                              HLR=float(head_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
+                              Loss=float(loss.asnumpy()),
+                              id=float(id_loss.avg),
+                              tri=float(tri_loss.avg),
+                              batch_time=batch_time.avg,
+                              acc=float(acc.avg.asnumpy() * 100)
+                            ))
 
         ########################################################################
         # Epoch Evaluation
@@ -569,15 +578,12 @@ if __name__ == "__main__":
             gallset = ds.GeneratorDataset(gallset_generator, ["img", "label"])
             gallset = gallset.map(operations=transform_test, input_columns=["img"])
             gallery_loader = gallset.batch(batch_size=args.test_batch)
-            gallery_loader = DatasetHelper(gallery_loader, dataset_sink_mode=False)
 
             queryset = ds.GeneratorDataset(queryset_generator, ["img", "label"])
             queryset = queryset.map(operations=transform_test, input_columns=["img"])
             query_loader = queryset.batch(batch_size=args.test_batch)
-            query_loader = DatasetHelper(query_loader, dataset_sink_mode=False)
 
             if args.dataset == "SYSU":
-
                 cmc_v, mAP_v, cmc_i, mAP_i = test(args, gallery_loader, query_loader, ngall,\
                     nquery, net, gallery_cam=gall_cam, query_cam=query_cam)
 
@@ -633,6 +639,10 @@ if __name__ == "__main__":
             log_file.flush()
 
 
+    print("=> Save best parameters...")
+    print("=> Save best parameters...", file=log_file)
+    save_checkpoint(best_param_list, best_path)
+    
     if args.dataset == "SYSU":
         print(f"For SYSU-MM01 {args.sysu_mode} search, the testing result is:")
         print(f"For SYSU-MM01 {args.sysu_mode} search, the testing result is:", file=log_file)
