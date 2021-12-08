@@ -71,26 +71,25 @@ class CriterionWithNet(nn.Cell):
                         self._tri_loss(i_ms_representation[0], label))
 
         loss_total = 0
-        # for k in self.loss_func.split("+"):
 
-        #     if k == 'tri':
-        #         loss_total += loss_tri
-        #     if k == 'id':
-        #         loss_total += loss_id
-        #     if k == 'kldiv':
-        #         loss_vsd = \
-        #         self._kl_div(self.softmax(v_observation[1] / self.t),\
-        #             self.softmax(v_representation[1] / self.t)) +\
-        #         self._kl_div(self.softmax(i_observation[1] / self.t),\
-        #             self.softmax(i_representation[1] / self.t))
+        if self.loss_func == 'id':
+            loss_total = loss_id
+        elif self.loss_func == 'id+tri':
+            loss_total = loss_id + loss_tri
+        else:
+            loss_vsd = \
+            self._kl_div(self.softmax(v_observation[1] / self.t),\
+                self.softmax(v_representation[1] / self.t)) +\
+            self._kl_div(self.softmax(i_observation[1] / self.t),\
+                self.softmax(i_representation[1] / self.t))
 
-        #         loss_vcd =\
-        #         0.5 * self._kl_div(self.softmax(v_ms_observation[1] / self.t),\
-        #                 self.softmax(i_ms_representation[1] / self.t)) \
-        #         +0.5 * self._kl_div(self.softmax(i_ms_observation[1] / self.t),\
-        #                 self.softmax(v_ms_representation[1] / self.t))
+            loss_vcd =\
+            0.5 * self._kl_div(self.softmax(v_ms_observation[1] / self.t),\
+                    self.softmax(i_ms_representation[1] / self.t)) \
+            +0.5 * self._kl_div(self.softmax(i_ms_observation[1] / self.t),\
+                    self.softmax(v_ms_representation[1] / self.t))
 
-        #         loss_total += loss_vsd + loss_vcd
+            loss_total = loss_id + loss_tri + loss_vsd + loss_vcd
 
         self.acc =\
         self.get_acc(v_observation[1], label_) + self.get_acc(v_representation[1], label_) \
@@ -102,9 +101,9 @@ class CriterionWithNet(nn.Cell):
 
         self.loss_id = loss_id
         self.loss_tri = loss_tri
-        self.loss_total = loss_id + loss_tri
+        self.loss_total = loss_total
 
-        return loss_id + loss_tri
+        return loss_total
 
     @property
     def backbone_network(self):
