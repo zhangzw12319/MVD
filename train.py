@@ -52,7 +52,7 @@ def get_parser():
     psr.add_argument('--data-path', type=str, default='data')
     # Only used on Huawei Cloud OBS service,
     # when this is set, --data_path is overridden by --data-url
-    psr.add_argument("--data-url", type=str, default=None)
+    psr.add_argument("--data_url", type=str, default=None)
     psr.add_argument('--batch-size', default=4, type=int,
                      metavar='B', help='the number of person IDs in a batch')
     psr.add_argument('--test-batch', default=64, type=int,
@@ -106,7 +106,7 @@ def get_parser():
     psr.add_argument('--start-epoch', default=1, type=int,
                      help='start training epoch')
     psr.add_argument('--device-target', default="GPU",
-                     choices=["GPU", "Ascend"])
+                     choices=["GPU", "Ascend", "Cloud"])
     psr.add_argument('--gpu', default='0', type=str,
                      help='set CUDA_VISIBLE_DEVICES')
 
@@ -115,7 +115,7 @@ def get_parser():
     # the number set in the environment variable 'CUDA_VISIBLE_DEVICES'.
     #  For example, if export CUDA_VISIBLE_DEVICES=4,5,6, the 'device_id' can be 0,1,2 at the
     # moment, 'device_id' starts from 0, and 'device_id'=0 means using GPU of number 4.
-    psr.add_argument('--device-id', default=0, type=str, help='')
+    psr.add_argument('--device-id', default=0, type=int, help='')
 
     psr.add_argument('--device-num', default=1, type=int,
                      help='the total number of available gpus')
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         LOCAL_DATA_PATH = args.data_path
         args.run_distribute = False
     else:
-        if device == "GPU":
+        if device in ["GPU", "Ascend"]:
             LOCAL_DATA_PATH = args.data_path
             context.set_context(device_id=args.device_id)
 
@@ -261,16 +261,17 @@ if __name__ == "__main__":
     # end of if args.run_distribute:
 
         # Adapt to Huawei Cloud: download data from obs to local location
-        if device == "Ascend":
+        if device == "Cloud":
             # Adapt to Cloud: used for downloading data from OBS to docker on the cloud
             import moxing as mox
-
+            
             LOCAL_DATA_PATH = "/cache/data"
             args.data_path = LOCAL_DATA_PATH
             print("Download data...")
             mox.file.copy_parallel(src_url=args.data_url, dst_url=LOCAL_DATA_PATH)
             print("Download complete!(#^.^#)")
-            # print(os.listdir(local_data_path))
+            print(os.listdir(local_data_path))
+            pass
 
 
     ########################################################################
@@ -278,7 +279,7 @@ if __name__ == "__main__":
     ########################################################################
     loader_batch = args.batch_size * args.num_pos
 
-    if device in ("GPU", "CPU"):
+    if device in ("GPU", "CPU", "Ascend"):
         checkpoint_path = os.path.join("logs", args.tag, "training")
         os.makedirs(checkpoint_path, exist_ok=True)
 
