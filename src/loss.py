@@ -114,6 +114,7 @@ class CenterTripletLoss(nn.Cell):
         self.unique = P.Unique()
         self.cat = P.Concat(0)
         self.mean = P.ReduceMean(False)
+        self.chunk_ = P.Split(0, batch_size // 4)
 
     def construct(self, input_, label):
         """
@@ -126,7 +127,7 @@ class CenterTripletLoss(nn.Cell):
         label_uni = self.unique(label)[0]
         targets = self.cat((label_uni, label_uni))
         label_num = len(label_uni)
-        self.chunk_ = P.Split(0, label_num * 2)
+        
         feat = self.chunk_(input_)
         center = []
         for i in range(label_num * 2):

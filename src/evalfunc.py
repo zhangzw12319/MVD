@@ -6,7 +6,10 @@ import time
 import numpy as np
 import random
 import psutil
+import mindspore.ops as P
 
+POOLDIM = 2048
+KINDS = 4
 
 def show_memory_info(hint=""):
     """
@@ -27,23 +30,26 @@ def test(args, gallery, query, ngall, nquery,
     print('Extracting Gallery Feature...')
     start = time.time()
     ptr = 0
+    cat = P.Concat(1)
 
-    gall_feat_v = np.zeros((ngall, 2048 + args.z_dim))
-    gall_feat_i = np.zeros((ngall, 2048 + args.z_dim))
-    gall_feat_v_shared = np.zeros((ngall, 2048 + args.z_dim))
-    gall_feat_i_shared = np.zeros((ngall, 2048 + args.z_dim))
     gall_label = np.zeros((ngall,))
     query_label = np.zeros((nquery,))
+    
+    gall_feat_ob = np.zeros((ngall, POOLDIM * KINDS)) # 2048 x 4
+    gall_feat_repre = np.zeros((ngall, args.z_dim * KINDS))
     for (img, label) in gallery:
-        feat_v, feat_v_shared, feat_i, feat_i_shared = backbone(img)
-        size = int(feat_v.shape[0])
-        gall_feat_v[ptr:ptr + size, : ] = feat_v.asnumpy()
-        gall_feat_v_shared[ptr:ptr + size, : ] = feat_v_shared.asnumpy()
-        gall_feat_i[ptr:ptr + size, : ] = feat_i.asnumpy()
-        gall_feat_i_shared[ptr:ptr + size, : ] = feat_i_shared.asnumpy()
+        feat_v_ob, feat_v_re, feat_v_shared_ob, feat_v_shared_re,\
+        feat_i_ob, feat_i_re, feat_i_shared_ob, feat_i_shared_re = backbone(img)
 
-        gall_label[ptr:ptr + size] = label.asnumpy()
+        size = int(feat_v_ob.shape[0]) # batch size
+        ob = cat((feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob))
+        print("ob shape is", ob.shape)
+        repre = cat((feat_v_re, feat_v_shared_re, feat_i_re, feat_i_shared_re))
+        print("repre shape is", repre.shape)
 
+        gall_feat_ob[ptr : ptr + size, : ] = ob.asnumpy()
+        gall_feat_repre[ptr : ptr + size, : ] = repre.asnumpy()
+        gall_label[ptr : ptr + size] = label.asnumpy()
         ptr = ptr + size
     print(f'Extracting Time :\t {time.time() - start:.3f}')
     # print("gallery label:", gall_label)
@@ -52,49 +58,39 @@ def test(args, gallery, query, ngall, nquery,
     start = time.time()
     ptr = 0
 
-    query_feat_v = np.zeros((nquery, 2048 + args.z_dim))
-    query_feat_i = np.zeros((nquery, 2048 + args.z_dim))
-    query_feat_v_shared = np.zeros((nquery, 2048 + args.z_dim))
-    query_feat_i_shared = np.zeros((nquery, 2048 + args.z_dim))
+    query_feat_ob = np.zeros((nquery, POOLDIM * KINDS))
+    query_feat_repre = np.zeros((nquery, args.z_dim * KINDS))
     for (img, label) in query:
-        feat_v, feat_v_shared, feat_i, feat_i_shared = backbone(img)
-        size = int(feat_v.shape[0])
-        query_feat_v[ptr:ptr + size, : ] = feat_v.asnumpy()
-        query_feat_v_shared[ptr:ptr + size, : ] = feat_v_shared.asnumpy()
-        query_feat_i[ptr:ptr + size, : ] = feat_i.asnumpy()
-        query_feat_i_shared[ptr:ptr + size, : ] = feat_i_shared.asnumpy()
+        feat_v_ob, feat_v_re, feat_v_shared_ob, feat_v_shared_re,\
+        feat_i_ob, feat_i_re, feat_i_shared_ob, feat_i_shared_re = backbone(img)
 
-        query_label[ptr:ptr + size] = label.asnumpy()
+        size = int(feat_v_ob.shape[0])
+        ob = cat((feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob))
+        repre = cat((feat_v_re, feat_v_shared_re, feat_i_re, feat_i_shared_re))
+        
+        query_feat_ob[ptr : ptr + size, : ] = ob.asnumpy()
+        query_feat_repre[ptr : ptr + size, : ] = repre.asnumpy()
+
+        query_label[ptr : ptr + size] = label.asnumpy()
 
         ptr = ptr + size
     print(f'Extracting Time :\t {time.time() - start:.3f}')
 
     start = time.time()
     # compute the similarity
-    distmat_v = np.matmul(query_feat_v, np.transpose(gall_feat_v))
-    distmat_v_shared = np.matmul(query_feat_v_shared, np.transpose(gall_feat_v_shared))
-    distmat_i = np.matmul(query_feat_i, np.transpose(gall_feat_i))
-    distmat_i_shared = np.matmul(query_feat_i_shared, np.transpose(gall_feat_i_shared))
+    distmat_ob = np.matmul(query_feat_ob, np.transpose(gall_feat_ob))
+    distmat_repre = np.matmul(query_feat_repre, np.transpose(gall_feat_repre))
 
 
     if args.dataset == "SYSU":
-        cmc1, map1 = eval_sysu(-distmat_v, query_label, gall_label, query_cam, gallery_cam)
-        cmc2, map2 = eval_sysu(-distmat_v_shared, query_label, gall_label, query_cam, gallery_cam)
-        cmc3, map3 = eval_sysu(-distmat_i, query_label, gall_label, query_cam, gallery_cam)
-        cmc4, map4 = eval_sysu(-distmat_i_shared, query_label, gall_label, query_cam, gallery_cam)
+        cmc1, map1 = eval_sysu(-distmat_ob, query_label, gall_label, query_cam, gallery_cam)
+        cmc2, map2 = eval_sysu(-distmat_repre, query_label, gall_label, query_cam, gallery_cam)
 
     elif args.dataset == "RegDB":
-        cmc1, map1 = eval_regdb(-distmat_v, query_label, gall_label)
-        cmc2, map2 = eval_regdb(-distmat_v_shared, query_label, gall_label)
-        cmc3, map3 = eval_regdb(-distmat_i, query_label, gall_label)
-        cmc4, map4 = eval_regdb(-distmat_i_shared, query_label, gall_label)
+        cmc1, map1 = eval_regdb(-distmat_ob, query_label, gall_label)
+        cmc2, map2 = eval_regdb(-distmat_repre, query_label, gall_label)
 
-    cmc_v = (cmc1 + cmc2) / 2.0
-    map_v = (map1 + map2) / 2.0
-    cmc_i = (cmc3 + cmc4) / 2.0
-    map_i = (map3 + map4) / 2.0
-
-    return cmc_v, map_v, cmc_i, map_i
+    return cmc1, map1, cmc2, map2
 
 
 def eval_sysu(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=20):

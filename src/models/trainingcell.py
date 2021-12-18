@@ -26,7 +26,6 @@ class CriterionWithNet(nn.Cell):
         self.loss_tri = Parameter(Tensor([0.0], ms.float32))
         self.loss_total = Parameter(Tensor([0.0], ms.float32))
         self.acc = Parameter(Tensor([0.0], ms.float32))
-        self.scale = 0.0
 
         self.cat = P.Concat()
         self.cast = P.Cast()
@@ -52,56 +51,60 @@ class CriterionWithNet(nn.Cell):
         label = self.cat((label1, label2))
         label_ = self.cast(label, ms.int32)
 
-        loss_id = 0.5 * (self._ce_loss(v_observation[1], label_) +\
-                        self._ce_loss(v_representation[1], label_)) +\
-                  0.5 * (self._ce_loss(i_observation[1], label_) +\
-                        self._ce_loss(i_representation[1], label_)) +\
-                  0.25 * (self._ce_loss(v_ms_observation[1], label_) +\
-                        self._ce_loss(v_ms_representation[1], label_)) +\
-                  0.25 * (self._ce_loss(i_ms_observation[1], label_) +\
-                        self._ce_loss(i_ms_representation[1], label_))
+        # loss_id = 0.5 * (self._ce_loss(v_observation[1], label_) +\
+        #                 self._ce_loss(v_representation[1], label_)) +\
+        #           0.5 * (self._ce_loss(i_observation[1], label_) +\
+        #                 self._ce_loss(i_representation[1], label_)) +\
+        #           0.25 * (self._ce_loss(v_ms_observation[1], label_) +\
+        #                 self._ce_loss(v_ms_representation[1], label_)) +\
+        #           0.25 * (self._ce_loss(i_ms_observation[1], label_) +\
+        #                 self._ce_loss(i_ms_representation[1], label_))
+        
+        ##################### Only for debug1 rm representation ###########
+        loss_id = 0.5 * self._ce_loss(v_observation[1], label_) +\
+                  0.5 * self._ce_loss(i_observation[1], label_) +\
+                  0.25 * self._ce_loss(v_ms_observation[1], label_) +\
+                  0.25 * self._ce_loss(i_ms_observation[1], label_)
+        ###################################################################
 
-        loss_tri = 0.5 * (self._tri_loss(v_observation[0], label) +\
-                        self._tri_loss(v_representation[0], label))\
-                 + 0.5 * (self._tri_loss(i_observation[0], label) +\
-                        self._tri_loss(i_representation[0], label)) \
-                 + 0.25 * (self._tri_loss(v_ms_observation[0], label) +\
-                        self._tri_loss(v_ms_representation[0], label)) \
-                 + 0.25 * (self._tri_loss(i_ms_observation[0], label) +\
-                        self._tri_loss(i_ms_representation[0], label))
-
+        ##################### Only for debug1 rm representation ###########
+        # loss_id = 0.5 * self._ce_loss(v_representation[1], label_) +\
+        #           0.5 * self._ce_loss(i_representation[1], label_) +\
+        #           0.25 * self._ce_loss(v_ms_representation[1], label_) +\
+        #           0.25 * self._ce_loss(i_ms_representation[1], label_)
+        ###################################################################
         loss_total = 0
 
-        if self.loss_func == 'id':
+        if self.loss_func == "id":
             loss_total = loss_id
-        elif self.loss_func == 'id+tri':
+        elif self.loss_func == "id+tri":
+            # loss_tri = 0.5 * (self._tri_loss(v_observation[0], label) +\
+            #             self._tri_loss(v_representation[0], label))\
+            #      + 0.5 * (self._tri_loss(i_observation[0], label) +\
+            #             self._tri_loss(i_representation[0], label)) \
+            #      + 0.25 * (self._tri_loss(v_ms_observation[0], label) +\
+            #             self._tri_loss(v_ms_representation[0], label)) \
+            #      + 0.25 * (self._tri_loss(i_ms_observation[0], label) +\
+            #             self._tri_loss(i_ms_representation[0], label))
+            ##################### Only for debug1 rm representation ###########
+            loss_tri = 0.5 * self._tri_loss(v_observation[0], label) +\
+                 + 0.5 * self._tri_loss(i_observation[0], label) +\
+                 + 0.25 * self._tri_loss(v_ms_observation[0], label) +\
+                 + 0.25 * self._tri_loss(i_ms_observation[0], label)
+            ###################################################################
             loss_total = loss_id + loss_tri
-        else:
-            loss_vsd = \
-            self._kl_div(self.softmax(v_observation[1] / self.t),\
-                self.softmax(v_representation[1] / self.t)) +\
-            self._kl_div(self.softmax(i_observation[1] / self.t),\
-                self.softmax(i_representation[1] / self.t))
 
-            loss_vcd =\
-            0.5 * self._kl_div(self.softmax(v_ms_observation[1] / self.t),\
-                    self.softmax(i_ms_representation[1] / self.t)) \
-            +0.5 * self._kl_div(self.softmax(i_ms_observation[1] / self.t),\
-                    self.softmax(v_ms_representation[1] / self.t))
+            P.Depend()(loss_tri, P.Assign()(self.loss_tri, loss_tri))
 
-            loss_total = loss_id + loss_tri + loss_vsd + loss_vcd
-
-        self.acc =\
+        acc_tmp =\
         self.get_acc(v_observation[1], label_) + self.get_acc(v_representation[1], label_) \
         +self.get_acc(i_observation[1], label_) + self.get_acc(i_representation[1], label_) \
         +self.get_acc(v_ms_observation[1], label_) + self.get_acc(v_ms_representation[1], label_)\
         +self.get_acc(i_ms_observation[1], label_) + self.get_acc(i_ms_representation[1], label_)
 
-        self.acc = self.acc / 8.0
-
-        self.loss_id = loss_id
-        self.loss_tri = loss_tri
-        self.loss_total = loss_total
+        P.Depend()(acc_tmp, P.Assign()(self.acc, acc_tmp / 8.0))
+        P.Depend()(loss_id, P.Assign()(self.loss_id, loss_id))
+        P.Depend()(loss_total, P.Assign()(self.loss_total, loss_total))
 
         return loss_total
 
@@ -126,6 +129,7 @@ class OptimizerWithNetAndCriterion(nn.Cell):
 
     def construct(self, *inputs):
         weights = self.weights
+        loss = self.network(*inputs)
         grads = self.grad(self.network, weights)(*inputs)
-        self.optimizer(grads)
-        return self.network.loss_total
+        P.Depend()(loss, self.optimizer(grads))
+        return loss

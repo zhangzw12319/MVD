@@ -9,6 +9,9 @@ fi
 
 cd ..
 
+# Note: --resume, --data-path arguments support global path or relative path(starting
+#       from project root directory, i.e. /.../DDAG_mindspore/)
+
 python eval.py \
 --dataset "SYSU" \
 --data-path "/home/shz/pytorch/data/sysu" \

@@ -1,13 +1,16 @@
 #!/bin/sh
 
-myfile="train_sysu_all.sh"
+myfile="run_standalone_train_sysu_all_gpu.sh"
 
 if [ ! -f "$myfile" ]; then
     echo "Please first enter MVD/scripts/run_standalone_train and run. Exit..."
     exit 0
 fi
 
-cd ../..
+cd ..
+
+# Note: --pretrain, --data-path arguments support global path or relative path(starting
+#       from project root directory, i.e. /.../DDAG_mindspore/)
 
 python train.py \
 --dataset "SYSU" \
@@ -16,8 +19,9 @@ python train.py \
 --lr 0.00035 \
 --device-target GPU \
 --gpu 2 \
---pretrain "/home/shz/pytorch/zzw/DDAG_mindspore/model/pretrain/resnet50_ascend_v111_imagenet2012_official_cv_bs32_acc76/resnet50.ckpt" \
+--pretrain "/home/shz/pytorch/zzw/DDAG_mindspore/resnet50.ckpt" \
 --tag "sysu_all" \
---loss-func "id+tri" \
+--loss-func "id" \
 --sysu_mode "all" \
+--start-epoch 1 \
 --epoch 80

@@ -164,7 +164,7 @@ class Logger():
             self.file.close()
 
 
-class LRScheduler(nn.Cell):
+class LRScheduler():
     r"""
     Gets learning rate warming up + decay.
 
@@ -183,30 +183,70 @@ class LRScheduler(nn.Cell):
         ``Ascend`` ``GPU``
 
     """
-    def __init__(self, learning_rate, warmup_steps=0, weight_decay=None, decay_factor=0.5):
-        super().__init__()
-        self.warmup_steps = warmup_steps
-        self.learning_rate = learning_rate
-        self.weight_decay = weight_decay
-        self.decay_factor = decay_factor
-        self.min = P.Minimum()
-        self.cast = P.Cast()
 
-    def construct(self, global_step):
+    def __init__(self, learning_rate, steps_per_epoch, args_):
+        super(LRScheduler, self).__init__()
+        self.learning_rate = learning_rate
+        self.steps_per_epoch = steps_per_epoch
+        self.epochs = args_.epoch
+        self.warmup_steps = args_.warmup_steps
+        self.start_decay = args_.start_decay
+        self.end_decay = args_.end_decay
+        
+        assert (self.epochs > self.warmup_steps) and (self.start_decay > self.warmup_steps)\
+            and (self.end_decay > self.start_decay)
+
+    def getlr(self):
         """
-        LR Scheduler
+        return lr tensor sized self.epochs x steps_per_epoch
         """
-        if global_step < self.warmup_steps:
-            warmup_percent = self.cast(self.min(global_step, self.warmup_steps), ms.float32)\
-             / self.warmup_steps
-            return self.learning_rate * warmup_percent
-        lr_ = self.learning_rate
-        for decay in self.weight_decay:
-            if global_step <= decay:
-                break
-            lr_ = lr_ * self.decay_factor
-        lr_ = self.cast(lr_, ms.float32)
-        return lr_
+        lr = []
+        final_lr = 0.0
+        for epoch in range(1, self.epochs + 1):
+            # calculate the lr for current epoch
+            if epoch < self.warmup_steps:
+                warmup_percent = epoch / self.warmup_steps
+                current_lr = self.learning_rate * warmup_percent
+            elif epoch < self.start_decay:
+                current_lr = self.learning_rate
+            elif epoch <= self.end_decay:
+                current_lr = self.learning_rate
+                for decay in range(self.start_decay, self.end_decay + 1):
+                    if decay <= epoch:
+                        current_lr = current_lr * 0.1
+                    else:
+                        break
+                if epoch == self.end_decay:
+                    final_lr = current_lr
+            else:
+                current_lr = final_lr
+
+            # fill the steps in current epoch
+            for _ in range(self.steps_per_epoch):
+                lr.append(current_lr)
+            print(current_lr)
+        lr = Tensor(lr, dtype=ms.float32)
+        print(len(lr))
+
+        return lr
+
+    def getlr2(self):
+        lr = []
+        for epoch in range(1, self.epochs + 1):
+            # calculate the lr for current epoch
+            if epoch < self.warmup_steps:
+                warmup_percent = epoch / self.warmup_steps
+                current_lr = self.learning_rate * warmup_percent
+            else:
+                current_lr = self.learning_rate
+
+            # fill the steps in current epoch
+            for _ in range(self.steps_per_epoch):
+                lr.append(current_lr)
+            print(current_lr)
+        lr = Tensor(lr, dtype=ms.float32)
+
+        return lr
 
 
 def genidx(train_color_label, train_thermal_label):

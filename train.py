@@ -45,6 +45,7 @@ def get_parser():
     return a parser
     '''
     psr = argparse.ArgumentParser(description="DDAG Code Mindspore Version")
+    psr.add_argument("--MSmode", default="GRAPH_MODE", choices=["GRAPH_MODE", "PYNATIVE_MODE"])
 
     # dataset settings
     psr.add_argument("--dataset", default='SYSU', choices=['SYSU', 'RegDB'],
@@ -53,7 +54,7 @@ def get_parser():
     # Only used on Huawei Cloud OBS service,
     # when this is set, --data_path is overridden by --data-url
     psr.add_argument("--data_url", type=str, default=None)
-    psr.add_argument('--batch-size', default=4, type=int,
+    psr.add_argument('--batch-size', default=8, type=int,
                      metavar='B', help='the number of person IDs in a batch')
     psr.add_argument('--test-batch', default=64, type=int,
                      metavar='tb', help='testing batch size')
@@ -79,7 +80,8 @@ def get_parser():
 
     # loss setting
     psr.add_argument('--loss-func', default="id+tri", type=str,
-                     help='specify loss function type', choices=["id", "id+tri", "id+tri+kldiv"])
+                     help='specify loss function type', choices=["id", "id+tri"])
+    psr.add_argument('--triloss', default=["OriTri", "CenterTri"])
     psr.add_argument('--drop', default=0.2, type=float,
                      metavar='drop', help='dropout ratio')
     psr.add_argument('--margin', default=0.3, type=float,
@@ -175,40 +177,37 @@ def decode(img):
     return Image.fromarray(img)
 
 
-def optim(epoch_, backbone_lr_scheduler_, head_lr_scheduler_):
+def optim(args_, b_lr, h_lr):
     '''
     return an optimizer of SGD or ADAM
     '''
     ########################################################################
     # Define optimizers
     ########################################################################
-    epoch_ = ms.Tensor(epoch_, ms.int32)
-    backbone_lr = float(backbone_lr_scheduler_(epoch_).asnumpy())
-    head_lr = float(head_lr_scheduler_(epoch_).asnumpy())
 
-    if args.optim == 'sgd':
+    if args_.optim == 'sgd':
 
         opt_p = SGD([
-            {'params': net.rgb_backbone.trainable_params(), 'lr': backbone_lr},
-            {'params': net.ir_backbone.trainable_params(), 'lr': backbone_lr},
-            {'params': net.shared_backbone.trainable_params(), 'lr': backbone_lr},
-            {'params': net.rgb_bottleneck.trainable_params(), 'lr': head_lr},
-            {'params': net.ir_bottleneck.trainable_params(), 'lr': head_lr},
-            {'params': net.shared_bottleneck.trainable_params(), 'lr': head_lr},
+            {'params': net.rgb_backbone.trainable_params(), 'lr': b_lr},
+            {'params': net.ir_backbone.trainable_params(), 'lr': b_lr},
+            {'params': net.shared_backbone.trainable_params(), 'lr': b_lr},
+            {'params': net.rgb_bottleneck.trainable_params(), 'lr': h_lr},
+            {'params': net.ir_bottleneck.trainable_params(), 'lr': h_lr},
+            {'params': net.shared_bottleneck.trainable_params(), 'lr': h_lr},
             ],
-                    learning_rate=args.lr, weight_decay=5e-4, nesterov=True, momentum=0.9)
+                    learning_rate=args_.lr, weight_decay=5e-4, nesterov=True, momentum=0.9)
 
-    elif args.optim == 'adam':
+    elif args_.optim == 'adam':
 
         opt_p = Adam([
-            {'params': net.rgb_backbone.trainable_params(), 'lr': backbone_lr},
-            {'params': net.ir_backbone.trainable_params(), 'lr': backbone_lr},
-            {'params': net.shared_backbone.trainable_params(), 'lr': backbone_lr},
-            {'params': net.rgb_bottleneck.trainable_params(), 'lr': head_lr},
-            {'params': net.ir_bottleneck.trainable_params(), 'lr': head_lr},
-            {'params': net.shared_bottleneck.trainable_params(), 'lr': head_lr},
+            {'params': net.rgb_backbone.trainable_params(), 'lr': b_lr},
+            {'params': net.ir_backbone.trainable_params(), 'lr': b_lr},
+            {'params': net.shared_backbone.trainable_params(), 'lr': b_lr},
+            {'params': net.rgb_bottleneck.trainable_params(), 'lr': h_lr},
+            {'params': net.ir_bottleneck.trainable_params(), 'lr': h_lr},
+            {'params': net.shared_bottleneck.trainable_params(), 'lr': h_lr},
         ],
-            learning_rate=args.lr, weight_decay=5e-4)
+                      learning_rate=args_.lr, weight_decay=5e-4)
 
     return opt_p
 
@@ -225,8 +224,12 @@ if __name__ == "__main__":
     ########################################################################
     device = args.device_target
     # init context
-    # context.set_context(mode=context.PYNATIVE_MODE, device_target=device, save_graphs=False)
-    context.set_context(mode=context.GRAPH_MODE, device_target=device, save_graphs=False)
+    if args.MSmode == "GRAPH_MODE":
+        context.set_context(mode=context.GRAPH_MODE,
+                            device_target=device, save_graphs=False, max_call_depth=3000)
+    else:
+        context.set_context(mode=context.PYNATIVE_MODE,
+                            device_target=device, save_graphs=False, max_call_depth=3000)
 
     if device == "CPU":
         LOCAL_DATA_PATH = args.data_path
@@ -265,13 +268,20 @@ if __name__ == "__main__":
             # Adapt to Cloud: used for downloading data from OBS to docker on the cloud
             import moxing as mox
             
-            LOCAL_DATA_PATH = "/cache/data"
-            args.data_path = LOCAL_DATA_PATH
+            local_data_path = "/cache/data"
+            args.data_path = local_data_path
             print("Download data...")
-            mox.file.copy_parallel(src_url=args.data_url, dst_url=LOCAL_DATA_PATH)
+            mox.file.copy_parallel(src_url=args.data_url,
+                                   dst_url=local_data_path)
             print("Download complete!(#^.^#)")
-            print(os.listdir(local_data_path))
-            pass
+
+            local_pretrainmodel_path = "/cache/pretrain_model"
+            pretrain_temp = args.pretrain
+            args.pretrain = local_pretrainmodel_path + "/resnet50.ckpt"
+            print("Download pretrain model..")
+            mox.file.copy_parallel(src_url=pretrain_temp,
+                                   dst_url=local_pretrainmodel_path)
+            print("Download complete!(#^.^#)")
 
 
     ########################################################################
@@ -428,7 +438,11 @@ if __name__ == "__main__":
     KL_Div = P.KLDivLoss()
     # TripLossNet = TripletLoss(margin=args.margin)
 
-    net_with_criterion = CriterionWithNet(net, CELossNet,\
+    if args.triloss == "CenterTri":
+        net_with_criterion = CriterionWithNet(net, CELossNet,\
+            CenterTripLossNet, KL_Div, loss_func=args.loss_func)
+    else:
+        net_with_criterion = CriterionWithNet(net, CELossNet,\
             OriTripLossNet, KL_Div, loss_func=args.loss_func)
 
     ########################################################################
@@ -438,10 +452,18 @@ if __name__ == "__main__":
     assert (args.start_decay > args.warmup_steps) and (args.start_decay < args.end_decay) \
          and (args.end_decay < args.epoch)
 
-    backbone_lr_scheduler = LRScheduler(args.lr, args.warmup_steps,\
-        [args.start_decay, args.end_decay], args.decay_factor)
-    head_lr_scheduler = LRScheduler(10 * args.lr, args.warmup_steps,\
-        [args.start_decay, args.end_decay], args.decay_factor)
+    N = np.maximum(len(trainset_generator.train_color_label),\
+        len(trainset_generator.train_thermal_label))
+    total_batch = int(N / loader_batch) + 1
+    print(total_batch)
+    backbone_lr_scheduler = LRScheduler(0.1 * args.lr, total_batch, args)
+    head_lr_scheduler = LRScheduler(args.lr, total_batch, args)
+    
+    backbone_lr = backbone_lr_scheduler.getlr()
+    head_lr = head_lr_scheduler.getlr()
+
+    optimizer_P = optim(args, backbone_lr, head_lr)
+    net_with_optim = OptimizerWithNetAndCriterion(net_with_criterion, optimizer_P)
 
     ########################################################################
     # Start Training
@@ -452,9 +474,6 @@ if __name__ == "__main__":
     BEST_R1 = 0.0
     BEST_EPOCH = 0
     for epoch in range(START_EPOCH, args.epoch + 1):
-
-        optimizer_P = optim(epoch, backbone_lr_scheduler, head_lr_scheduler)
-        net_with_optim = OptimizerWithNetAndCriterion(net_with_criterion, optimizer_P)
 
         print('==> Preparing Data Loader...')
         # identity sampler:
@@ -477,10 +496,6 @@ if __name__ == "__main__":
         trainset.tIndex = sampler.index2  # infrared index
         print(f"Epoch [{str(epoch)}]")
 
-        # define callbacks
-        loss_cb = LossMonitor()
-        cb = [loss_cb]
-
         trainset = trainset.batch(batch_size=loader_batch, drop_remainder=True)
 
         dataset_helper = DatasetHelper(trainset, dataset_sink_mode=False)
@@ -489,9 +504,7 @@ if __name__ == "__main__":
         net.set_train(mode=True)
 
         BATCH_IDX = 0
-        N = np.maximum(len(trainset_generator.train_color_label),\
-            len(trainset_generator.train_thermal_label))
-        total_batch = int(N / loader_batch) + 1
+
         print("The total number of batch is ->", total_batch)
 
         # calculate average batch time
@@ -533,7 +546,7 @@ if __name__ == "__main__":
 
             batch_time.update(time.time() - end_time)
             end_time = time.time()
-            if BATCH_IDX % 100 == 0:
+            if (BATCH_IDX > 0) and (BATCH_IDX % 100) == 0:
                 print('Epoch: [{}][{}/{}]   '
                       'Convolution LR: {CLR:.7f}   '
                       'IB & Classifier LR: {HLR:.7f}    '
@@ -543,8 +556,8 @@ if __name__ == "__main__":
                       'Batch Time:{batch_time:.2f}  '
                       'Accuracy:{acc:.2f}   '
                       .format(epoch, BATCH_IDX, total_batch,\
-                              CLR=float(backbone_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
-                              HLR=float(head_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
+                              CLR=float(head_lr[(epoch-1) * total_batch].asnumpy()),
+                              HLR=float(backbone_lr[(epoch-1) * total_batch].asnumpy()),
                               Loss=float(loss.asnumpy()),
                               id=float(id_loss.avg),
                               tri=float(tri_loss.avg),
@@ -560,8 +573,8 @@ if __name__ == "__main__":
                       'Batch Time:{batch_time:.2f}  '
                       'Accuracy:{acc:.2f}   '
                       .format(epoch, BATCH_IDX, total_batch,\
-                              CLR=float(backbone_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
-                              HLR=float(head_lr_scheduler(ms.Tensor(epoch, ms.int32)).asnumpy()),
+                              CLR=float(head_lr[(epoch-1) * total_batch].asnumpy()),
+                              HLR=float(backbone_lr[(epoch-1) * total_batch].asnumpy()),
                               Loss=float(loss.asnumpy()),
                               id=float(id_loss.avg),
                               tri=float(tri_loss.avg),
@@ -586,50 +599,49 @@ if __name__ == "__main__":
             query_loader = queryset.batch(batch_size=args.test_batch)
 
             if args.dataset == "SYSU":
-                cmc_v, mAP_v, cmc_i, mAP_i = test(args, gallery_loader, query_loader, ngall,\
+                cmc_ob, map_ob, cmc_repre, map_repre = test(args, gallery_loader, query_loader, ngall,\
                     nquery, net, gallery_cam=gall_cam, query_cam=query_cam)
 
             if args.dataset == "RegDB":
-                cmc_v, mAP_v, cmc_i, mAP_i = test(args, gallery_loader, query_loader, ngall,\
+                cmc_ob, map_ob, cmc_repre, map_repre = test(args, gallery_loader, query_loader, ngall,\
                     nquery, net)
 
-            print('v&v_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+            print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
                  Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_v[0], cmc_v[4], cmc_v[9], cmc_v[19], mAP_v))
-            print('v&v_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+                     cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob))
+            print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
                  Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_v[0], cmc_v[4], cmc_v[9], cmc_v[19], mAP_v), file=log_file)
-
-
-            print('i&i_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+                     cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre))
+            
+            print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
                  Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_i[0], cmc_i[4], cmc_i[9], cmc_i[19], mAP_i))
-            print('i&i_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+                     cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob), file=log_file)
+            print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
                  Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_i[0], cmc_i[4], cmc_i[9], cmc_i[19], mAP_i), file=log_file)
+                     cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre), file=log_file)
 
 
-            mAP = (mAP_v + mAP_i) / 2.0
-            cmc = (cmc_v + cmc_i) / 2.0
+            map_avg = (map_ob + map_repre) / 2.0
+            cmc = (cmc_ob + cmc_repre) / 2.0
 
-            print(f"rank-1: {cmc[0]:.2%}, mAP: {mAP:.2%}")
-            print(f"rank-1: {cmc[0]:.2%}, mAP: {mAP:.2%}", file=log_file)
+            print(f"rank-1: {cmc[0]:.2%}, mAP: {map_avg:.2%}")
+            print(f"rank-1: {cmc[0]:.2%}, mAP: {map_avg:.2%}", file=log_file)
 
             # Save checkpoint weights every args.save_period Epoch
             save_param_list = get_param_list(net)
             if (epoch >= 2) and (epoch % args.save_period) == 0:
                 path = osp.join(checkpoint_path,\
-                    f"epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{mAP*100:.2f}_{SUFFIX}.ckpt")
+                    f"epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_avg*100:.2f}_{SUFFIX}.ckpt")
                 save_checkpoint(save_param_list, path)
 
             # Record the best performance
-            if mAP > BEST_MAP:
-                BEST_MAP = mAP
+            if map_avg > BEST_MAP:
+                BEST_MAP = map_avg
 
             if cmc[0] > BEST_R1:
                 best_param_list = save_param_list
                 best_path = osp.join(checkpoint_path,\
-                    f"best_epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{mAP*100:.2f}_{SUFFIX}.ckpt")
+                    f"best_epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_avg*100:.2f}_{SUFFIX}.ckpt")
                 BEST_R1 = cmc[0]
                 BEST_EPOCH = epoch
 

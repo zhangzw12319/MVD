@@ -188,9 +188,5 @@ class MVD(nn.Cell):
         i_ms_observation = self.l2norm(i_ms_observation[0])
         i_ms_representation = self.l2norm(i_ms_representation[0])
 
-        feat_v = self.cat_dim1((v_observation, v_representation))
-        feat_i = self.cat_dim1((i_observation, i_representation))
-        feat_v_shared = self.cat_dim1((v_ms_observation, v_ms_representation))
-        feat_i_shared = self.cat_dim1((i_ms_observation, i_ms_representation))
-
-        return feat_v, feat_v_shared, feat_i, feat_i_shared
+        return v_observation, v_representation, v_ms_observation, v_ms_representation,\
+               i_observation, i_representation, i_ms_observation, i_ms_representation

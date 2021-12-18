@@ -1,13 +1,16 @@
 #!/bin/sh
 
-myfile="train_sysu_indoor.sh"
+myfile="run_standalone_train_sysu_indoor_gpu.sh"
 
 if [ ! -f "$myfile" ]; then
     echo "Please first enter MVD/scripts/run_standalone_train and run. Exit..."
     exit 0
 fi
 
-cd ../..
+cd ..
+
+# Note: --pretrain, --data-path arguments support global path or relative path(starting
+#       from project root directory, i.e. /.../DDAG_mindspore/)
 
 python train.py \
 --dataset SYSU \
