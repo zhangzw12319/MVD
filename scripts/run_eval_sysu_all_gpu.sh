@@ -17,7 +17,7 @@ cd ..
 python eval.py \
 --MSmode "PYNATIVE_MODE" \
 --dataset "SYSU" \
---data-path "/disw/datas/sysu" \
+--data-path "Define your own path/sysu" \
 --device-target GPU \
 --gpu 0 \
 --resume "../epoch_20.ckpt" \

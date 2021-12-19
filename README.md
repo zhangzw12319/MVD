@@ -2,7 +2,7 @@
 
 <!-- TOC -->
 
-## Model Descriptionm
+## Model Description
 
 Mindspore implementation for **Farewell to Mutual Information: Variational Distillation for Cross-Modal Person Re-identification** in CVPR 2021. Please read [our paper](https://openaccess.thecvf.com/content/CVPR2021/papers/Tian_Farewell_to_Mutual_Information_Variational_Distillation_for_Cross-Modal_Person_Re-Identification_CVPR_2021_paper.pdf) for a more detailed description of the training procedure. You can also read [Pytorch Version](https://github.com/FutabaSakuraXD/Farewell-to-Mutual-Information-Variational-Distiilation-for-Cross-Modal-Person-Re-identification) for further reference.
 
@@ -56,15 +56,15 @@ Then you can set `--data-path Your own path/dataset/sysu` or `--data-path Your o
 ## Environment Requirements
 
 - Hardware
-  - Support Ascend and GPU environment.
+   - Support Ascend and GPU environment.
 - Framework
-  - [Mindspore](https://www.mindspore.cn)
+   - [Mindspore](https://www.mindspore.cn)
 - Third Package
-  - Python==3.7.5
-  - Mindspore>=1.3.0(See [Installation](https://www.mindspore.cn/install/))
-  - Cuda==10.1
-  - psutil*==5.8.0
-  - tqdm*==4.62.0
+   - Python==3.7.5
+   - Mindspore>=1.3.0(See [Installation](https://www.mindspore.cn/install/))
+   - Cuda==10.1
+   - psutil*==5.8.0
+   - tqdm*==4.62.0
 
 *Note: these third party package are not stricted a specific version. For more details, please see `requriements.txt`.
 
