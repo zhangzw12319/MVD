@@ -9,7 +9,8 @@ from PIL import Image
 
 parser = argparse.ArgumentParser(description="SYSU-MM01 Preprocessing")
 
-parser.add_argument("--data-path", type=str, default="Define your own path/sysu", help="path to SYSU-MM01 dataset folder")
+parser.add_argument("--data-path", type=str, default="Define your own path/sysu",\
+    help="path to SYSU-MM01 dataset folder")
 args = parser.parse_args()
 
 data_path = args.data_path

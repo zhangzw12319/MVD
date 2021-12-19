@@ -199,8 +199,8 @@ def optim(args_, b_lr, h_lr):
             {'params': net.rgb_bottleneck.trainable_params(), 'lr': h_lr},
             {'params': net.ir_bottleneck.trainable_params(), 'lr': h_lr},
             {'params': net.shared_bottleneck.trainable_params(), 'lr': h_lr},
-            ],
-                    learning_rate=args_.lr, weight_decay=5e-4, nesterov=True, momentum=0.9)
+        ],\
+            learning_rate=args_.lr, weight_decay=5e-4, nesterov=True, momentum=0.9)
 
     elif args_.optim == 'adam':
 
@@ -211,8 +211,8 @@ def optim(args_, b_lr, h_lr):
             {'params': net.rgb_bottleneck.trainable_params(), 'lr': h_lr},
             {'params': net.ir_bottleneck.trainable_params(), 'lr': h_lr},
             {'params': net.shared_bottleneck.trainable_params(), 'lr': h_lr},
-        ],
-                      learning_rate=args_.lr, weight_decay=5e-4)
+        ],\
+            learning_rate=args_.lr, weight_decay=5e-4)
 
     return opt_p
 
@@ -600,30 +600,24 @@ if __name__ == "__main__":
             query_loader = queryset.batch(batch_size=args.test_batch)
 
             if args.dataset == "SYSU":
-                cmc_ob, map_ob, cmc_repre, map_repre = test(args, gallery_loader, query_loader, ngall,\
+                cmc_ob, map_ob, _, _ = test(args, gallery_loader, query_loader, ngall,\
                     nquery, net, gallery_cam=gall_cam, query_cam=query_cam)
 
             if args.dataset == "RegDB":
-                cmc_ob, map_ob, cmc_repre, map_repre = test(args, gallery_loader, query_loader, ngall,\
+                cmc_ob, map_ob, _, _ = test(args, gallery_loader, query_loader, ngall,\
                     nquery, net)
 
             print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
                  Rank-20: {:.2%}| mAP: {:.2%}'.format(\
                  cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob))
-            print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
-                 Rank-20: {:.2%}| mAP: {:.2%}'.format(\
-                 cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre))
 
             print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
                  Rank-20: {:.2%}| mAP: {:.2%}'.format(\
                  cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob), file=log_file)
-            print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
-                 Rank-20: {:.2%}| mAP: {:.2%}'.format(\
-                 cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre), file=log_file)
 
 
-            map_ = (map_ob + map_repre) / 2.0
-            cmc = (cmc_ob + cmc_repre) / 2.0
+            map_ = map_ob
+            cmc = cmc_ob
 
             print(f"rank-1: {cmc[0]:.2%}, mAP: {map_:.2%}")
             print(f"rank-1: {cmc[0]:.2%}, mAP: {map_:.2%}", file=log_file)

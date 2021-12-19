@@ -47,7 +47,7 @@ class CriterionWithNet(nn.Cell):
     def get_acc(self, logits, label):
         predict, _ = self.max(logits)
         correct = self.eq(predict, label)
-        return P.Div()(msnp.where(correct, 1.0, 0.0).sum() , label.shape[0])
+        return P.Div()(msnp.where(correct, 1.0, 0.0).sum(), label.shape[0])
 
 
     def construct(self, img1, img2, label1, label2):

@@ -15,8 +15,9 @@
 """ dataset.py """
 
 import os
-import numpy as np
 import random
+import numpy as np
+
 from PIL import Image
 
 # minist_dataset = ds.MnistDataset()

@@ -96,7 +96,7 @@ class ChannelCompress(nn.Cell):
         add_block += [nn.ReLU()]
 
         add_block += [nn.Dense(num_bottleneck, num_bottleneck // 2)]
-        add_block += [nn.BatchNorm1d( num_bottleneck // 2)]
+        add_block += [nn.BatchNorm1d(num_bottleneck // 2)]
         add_block += [nn.ReLU()]
 
         add_block += [nn.Dense(num_bottleneck // 2, out_ch)]
