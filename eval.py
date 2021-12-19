@@ -25,8 +25,6 @@ import mindspore.dataset as ds
 import mindspore.dataset.vision.py_transforms as py_trans
 
 from mindspore import context, load_checkpoint, load_param_into_net, DatasetHelper
-from mindspore.context import ParallelMode
-from mindspore.communication.management import init, get_group_size
 from mindspore.dataset.transforms.py_transforms import Compose
 
 from PIL import Image

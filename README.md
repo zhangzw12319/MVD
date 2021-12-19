@@ -234,12 +234,12 @@ You will get result from training log file like the following:
 
 ```text
 ==> Start Training...
-Epoch: [1][100/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:21.7580   id:9.3309   tri:12.4270   Batch Time:1.19  Accuracy:0.40   
-Epoch: [1][200/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:19.3218   id:9.1066   tri:10.2152   Batch Time:1.17  Accuracy:0.63   
-Epoch: [1][300/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:18.7310   id:8.8001   tri:9.9309   Batch Time:1.16  Accuracy:1.03   
-Epoch: [1][400/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:16.9942   id:8.4224   tri:8.5718   Batch Time:1.16  Accuracy:1.55   
-Epoch: [1][500/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:16.3901   id:8.1935   tri:8.1966   Batch Time:1.15  Accuracy:2.10   
-Epoch: [1][600/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:15.1044   id:7.8598   tri:7.2447   Batch Time:1.15  Accuracy:2.74   
+Epoch: [1][100/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:21.7580   id:9.3309   tri:12.4270   Batch Time:1.19  Accuracy:0.40
+Epoch: [1][200/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:19.3218   id:9.1066   tri:10.2152   Batch Time:1.17  Accuracy:0.63
+Epoch: [1][300/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:18.7310   id:8.8001   tri:9.9309   Batch Time:1.16  Accuracy:1.03
+Epoch: [1][400/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:16.9942   id:8.4224   tri:8.5718   Batch Time:1.16  Accuracy:1.55
+Epoch: [1][500/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:16.3901   id:8.1935   tri:8.1966   Batch Time:1.15  Accuracy:2.10
+Epoch: [1][600/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:15.1044   id:7.8598   tri:7.2447   Batch Time:1.15  Accuracy:2.74
 ...
 ```
 
