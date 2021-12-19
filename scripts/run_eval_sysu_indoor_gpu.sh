@@ -15,9 +15,9 @@ cd ..
 # if --device-target Ascend, then set --device-id X
 
 python eval.py \
---MSmode "PYNATIVE_MODE"
+--MSmode "PYNATIVE_MODE" \
 --dataset "SYSU" \
---data-path "Define your own path/sysu" \
+--data-path "/home/yuki/dataset/sysu" \
 --device-target GPU \
 --gpu 0 \
 --resume "XXX.ckpt" \

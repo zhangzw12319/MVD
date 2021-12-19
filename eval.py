@@ -112,7 +112,7 @@ def get_parser():
 
 
     # logging configs
-    parser_.add_argument('--tag', default='test', type=str,
+    parser_.add_argument('--tag', default='toy', type=str,
                          help='ckpt suffix name')
 
     # testing / evaluation config

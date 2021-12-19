@@ -21,5 +21,5 @@ python eval.py \
 --device-target GPU \
 --gpu 0 \
 --resume "XXX.ckpt" \
---sysu-mode all
+--sysu-mode all \
 --tag "sysu_all"

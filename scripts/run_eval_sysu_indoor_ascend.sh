@@ -15,7 +15,7 @@ cd ..
 # if --device-target Ascend, then set --device-id X
 
 python eval.py \
---MSmode "PYNATIVE_MODE"
+--MSmode "PYNATIVE_MODE" \
 --dataset "SYSU" \
 --data-path "Define your own path/sysu" \
 --device-target Ascend \

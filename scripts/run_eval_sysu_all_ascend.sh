@@ -21,5 +21,5 @@ python eval.py \
 --device-target Ascend \
 --device-id 0 \
 --resume "XXX.ckpt" \
---sysu-mode all
+--sysu-mode all \
 --tag "sysu_all"

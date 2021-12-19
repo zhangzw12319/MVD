@@ -564,7 +564,7 @@ if __name__ == "__main__":
                               tri=float(tri_loss.asnumpy()),
                               batch_time=batch_time.avg,
                               acc=float(acc.avg.asnumpy() * 100)
-                            ))
+                              ))
                 print('Epoch: [{}][{}/{}]   '
                       'Convolution LR: {CLR:.7f}   '
                       'IB & Classifier LR: {HLR:.7f}    '
@@ -581,7 +581,7 @@ if __name__ == "__main__":
                               tri=float(tri_loss.asnumpy()),
                               batch_time=batch_time.avg,
                               acc=float(acc.avg.asnumpy() * 100)
-                            ), file=log_file)
+                              ), file=log_file)
                 log_file.flush()
 
         ########################################################################
