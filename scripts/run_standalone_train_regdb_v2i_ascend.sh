@@ -1,6 +1,6 @@
 #!/bin/sh
 
-myfile="run_standalone_train_sysu_indoor_gpu.sh"
+myfile="run_standalone_train_regdb_v2i_ascend.sh"
 
 if [ ! -f "$myfile" ]; then
     echo "Please first enter MVD/scripts/ and run. Exit..."
@@ -14,15 +14,16 @@ cd ..
 
 python train.py \
 --MSmode PYNATIVE_MODE \
---dataset SYSU \
---data-path "Define your own path/sysu/" \
+--dataset RegDB \
+--data-path "Define your own path/regdb/" \
 --optim adam \
 --lr 0.0035 \
---device-target GPU \
---gpu 0 \
+--device-target Ascend \
+--device-id 0 \
 --pretrain "resnet50.ckpt" \
---tag "sysu_indoor" \
+--tag "regdb_v2i" \
 --loss-func id+tri \
---sysu-mode indoor \
+--trial 1 \
+--regdb_mode v2i \
 --epoch 80 \
---print-per-step 100
+--print-per-step 30

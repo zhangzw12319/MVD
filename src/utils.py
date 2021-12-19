@@ -1,6 +1,18 @@
-"""
-Common utils
-"""
+# Copyright 2021 Huawei Technologies Co., Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ============================================================================
+""" utils.py """
 
 import sys
 import os
@@ -8,10 +20,8 @@ import os.path as osp
 import numpy as np
 import mindspore as ms
 import mindspore.dataset as ds
-import mindspore.nn as nn
-import mindspore.ops as P
 
-
+from mindspore import nn
 from mindspore.common import Tensor
 
 
@@ -67,7 +77,6 @@ class IdentitySampler(ds.Sampler):
 
         self.index1 = index1
         self.index2 = index2
-        self.N = N
         self.num_samples = N
 
     def __iter__(self):
@@ -76,7 +85,7 @@ class IdentitySampler(ds.Sampler):
             yield i
 
     def __len__(self):
-        return self.N
+        return self.num_samples
 
 
 class AverageMeter():
@@ -120,7 +129,6 @@ def mkdir_if_missing(directory):
 class Logger():
     """
     Write console output to external text file.
-    Code imported from https://github.com/Cysu/open-reid/blob/master/reid/utils/logging.py.
     """
     def __init__(self, fpath=None):
         self.console = sys.stdout
@@ -192,7 +200,7 @@ class LRScheduler():
         self.warmup_steps = args_.warmup_steps
         self.start_decay = args_.start_decay
         self.end_decay = args_.end_decay
-        
+
         assert (self.epochs > self.warmup_steps) and (self.start_decay > self.warmup_steps)\
             and (self.end_decay > self.start_decay)
 
@@ -224,26 +232,6 @@ class LRScheduler():
             # fill the steps in current epoch
             for _ in range(self.steps_per_epoch):
                 lr.append(current_lr)
-            print(current_lr)
-        lr = Tensor(lr, dtype=ms.float32)
-        print(len(lr))
-
-        return lr
-
-    def getlr2(self):
-        lr = []
-        for epoch in range(1, self.epochs + 1):
-            # calculate the lr for current epoch
-            if epoch < self.warmup_steps:
-                warmup_percent = epoch / self.warmup_steps
-                current_lr = self.learning_rate * warmup_percent
-            else:
-                current_lr = self.learning_rate
-
-            # fill the steps in current epoch
-            for _ in range(self.steps_per_epoch):
-                lr.append(current_lr)
-            print(current_lr)
         lr = Tensor(lr, dtype=ms.float32)
 
         return lr

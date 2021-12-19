@@ -1,10 +1,18 @@
-'''
-MVD(Multimodal Variational Distillation) Mindspore version
-DATE:2021.11
-Developer List:
-[@zhangzw12319](https://github.com/zhangzw12319)
-'''
-
+# Copyright 2021 Huawei Technologies Co., Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ============================================================================
+"""train.py"""
 
 import os
 import os.path as osp
@@ -13,7 +21,6 @@ import time
 import numpy as np
 
 import mindspore as ms
-import mindspore.nn as nn
 import mindspore.ops as P
 import mindspore.dataset as ds
 import mindspore.dataset.vision.py_transforms as py_trans
@@ -23,22 +30,20 @@ from mindspore import context, load_checkpoint, \
 from mindspore.context import ParallelMode
 from mindspore.communication.management import init, get_group_size
 from mindspore.dataset.transforms.py_transforms import Compose
-from mindspore.train.callback import LossMonitor
 from mindspore.nn import SGD, Adam
+from mindspore import nn
 
 from PIL import Image
 from tqdm import tqdm
 
 from src.dataset import SYSUDatasetGenerator, RegDBDatasetGenerator,\
-    TestData, process_gallery_sysu, process_query_sysu, process_test_regdb,\
-    genidx
-from src.evalfunc import test 
+    TestData, process_gallery_sysu, process_query_sysu, process_test_regdb
+from src.evalfunc import test
 from src.models.mvd import MVD
 from src.models.trainingcell import CriterionWithNet, OptimizerWithNetAndCriterion
 from src.loss import OriTripletLoss, CenterTripletLoss
 from src.utils import IdentitySampler, genidx, AverageMeter, get_param_list,\
      LRScheduler
-
 
 def get_parser():
     '''
@@ -99,8 +104,7 @@ def get_parser():
                      help='weight decay start epoch(included)')
     psr.add_argument("--end-decay", default=27, type=int,
                      help='weight decay end epoch(included)')
-    psr.add_argument("--decay-factor", default=0.5,
-                     help=r'lr_{epoch} = args.decay_factor * lr_{epoch - 1}')
+    psr.add_argument("--decay-factor", default=0.5, type=int)
 
     # training configs
     psr.add_argument('--epoch', default=80, type=int,
@@ -111,6 +115,7 @@ def get_parser():
                      choices=["GPU", "Ascend", "Cloud"])
     psr.add_argument('--gpu', default='0', type=str,
                      help='set CUDA_VISIBLE_DEVICES')
+    psr.add_argument('--print-per-step', default=100, type=int)
 
     # Please make sure that the 'device_id' set in context is in the range:[0, total number of GPU).
     #  If the environment variable 'CUDA_VISIBLE_DEVICES' is set, the total number of GPU will be
@@ -129,7 +134,7 @@ def get_parser():
     psr.add_argument('--run_distribute', action='store_true',
                      help="if true, will be run on distributed architecture with mindspore")
     psr.add_argument('--parameter-server', default=False)
-    psr.add_argument('--save-period', default=20, type=int,
+    psr.add_argument('--save-period', default=10, type=int,
                      help=" save checkpoint file every args.save_period epochs")
 
 
@@ -139,7 +144,7 @@ def get_parser():
                      help="Github branch name, for ablation study tagging")
 
     # testing / evaluation config
-    psr.add_argument('--sysu_mode', default='all', type=str,
+    psr.add_argument('--sysu-mode', default='all', type=str,
                      help=' test all or indoor search(only for SYSU-MM01)')
     psr.add_argument('--regdb_mode', default='v2i', type=str, choices=["v2i", "i2v"],\
         help='v2i: visible to infrared search; i2v:infrared to visible search.(Only for RegDB)')
@@ -267,7 +272,7 @@ if __name__ == "__main__":
         if device == "Cloud":
             # Adapt to Cloud: used for downloading data from OBS to docker on the cloud
             import moxing as mox
-            
+
             local_data_path = "/cache/data"
             args.data_path = local_data_path
             print("Download data...")
@@ -330,8 +335,7 @@ if __name__ == "__main__":
     transform_train_rgb = Compose(
         [
             decode,
-            # py_trans.Pad(10),
-            # py_trans.RandomCrop((args.img_h, args.img_w)),
+            py_trans.RandomCrop((args.img_h, args.img_w)),
             py_trans.RandomGrayscale(prob=0.5),
             py_trans.RandomHorizontalFlip(),
             py_trans.ToTensor(),
@@ -343,8 +347,7 @@ if __name__ == "__main__":
     transform_train_ir = Compose(
         [
             decode,
-            # py_trans.Pad(10),
-            # py_trans.RandomCrop((args.img_h, args.img_w)),
+            py_trans.RandomCrop((args.img_h, args.img_w)),
             # py_trans.RandomGrayscale(prob=0.5),
             py_trans.RandomHorizontalFlip(),
             py_trans.ToTensor(),
@@ -435,15 +438,15 @@ if __name__ == "__main__":
     CELossNet = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction="mean")
     OriTripLossNet = OriTripletLoss(margin=args.margin, batch_size=2 * loader_batch)
     CenterTripLossNet = CenterTripletLoss(margin=args.margin, batch_size=2 * loader_batch)
-    KL_Div = P.KLDivLoss()
+
     # TripLossNet = TripletLoss(margin=args.margin)
 
     if args.triloss == "CenterTri":
         net_with_criterion = CriterionWithNet(net, CELossNet,\
-            CenterTripLossNet, KL_Div, loss_func=args.loss_func)
+            CenterTripLossNet, P.KLDivLoss(), loss_func=args.loss_func)
     else:
         net_with_criterion = CriterionWithNet(net, CELossNet,\
-            OriTripLossNet, KL_Div, loss_func=args.loss_func)
+            OriTripLossNet, P.KLDivLoss(), loss_func=args.loss_func)
 
     ########################################################################
     # Define schedulers
@@ -458,7 +461,7 @@ if __name__ == "__main__":
     print(total_batch)
     backbone_lr_scheduler = LRScheduler(0.1 * args.lr, total_batch, args)
     head_lr_scheduler = LRScheduler(args.lr, total_batch, args)
-    
+
     backbone_lr = backbone_lr_scheduler.getlr()
     head_lr = head_lr_scheduler.getlr()
 
@@ -513,8 +516,6 @@ if __name__ == "__main__":
 
         # calculate average accuracy
         acc = AverageMeter()
-        id_loss = AverageMeter()
-        tri_loss = AverageMeter()
 
 
         ########################################################################
@@ -526,13 +527,13 @@ if __name__ == "__main__":
         print('==> Start Training...')
         print('==> Start Training...', file=log_file)
         log_file.flush()
-        
+
         BEST_MAP = 0.0
         BEST_R1 = 0.0
         BEST_EPOCH = 0
         best_param_list = None
         best_path = None
-        
+
         for BATCH_IDX, (img1, img2, label1, label2) in enumerate(tqdm(dataset_helper)):
             label1 = ms.Tensor(label1, dtype=ms.float32)
             label2 = ms.Tensor(label2, dtype=ms.float32)
@@ -541,12 +542,12 @@ if __name__ == "__main__":
             loss = net_with_optim(img1, img2, label1, label2)
 
             acc.update(net_with_criterion.acc)
-            id_loss.update(net_with_criterion.loss_id.asnumpy())
-            tri_loss.update(net_with_criterion.loss_tri.asnumpy())
+            id_loss = net_with_criterion.loss_id
+            tri_loss = net_with_criterion.loss_tri
 
             batch_time.update(time.time() - end_time)
             end_time = time.time()
-            if (BATCH_IDX > 0) and (BATCH_IDX % 100) == 0:
+            if (BATCH_IDX > 0) and (BATCH_IDX % args.print_per_step) == 0:
                 print('Epoch: [{}][{}/{}]   '
                       'Convolution LR: {CLR:.7f}   '
                       'IB & Classifier LR: {HLR:.7f}    '
@@ -559,8 +560,8 @@ if __name__ == "__main__":
                               CLR=float(head_lr[(epoch-1) * total_batch].asnumpy()),
                               HLR=float(backbone_lr[(epoch-1) * total_batch].asnumpy()),
                               Loss=float(loss.asnumpy()),
-                              id=float(id_loss.avg),
-                              tri=float(tri_loss.avg),
+                              id=float(id_loss.asnumpy()),
+                              tri=float(tri_loss.asnumpy()),
                               batch_time=batch_time.avg,
                               acc=float(acc.avg.asnumpy() * 100)
                             ))
@@ -576,11 +577,11 @@ if __name__ == "__main__":
                               CLR=float(head_lr[(epoch-1) * total_batch].asnumpy()),
                               HLR=float(backbone_lr[(epoch-1) * total_batch].asnumpy()),
                               Loss=float(loss.asnumpy()),
-                              id=float(id_loss.avg),
-                              tri=float(tri_loss.avg),
+                              id=float(id_loss.asnumpy()),
+                              tri=float(tri_loss.asnumpy()),
                               batch_time=batch_time.avg,
                               acc=float(acc.avg.asnumpy() * 100)
-                            ))
+                            ), file=log_file)
                 log_file.flush()
 
         ########################################################################
@@ -607,41 +608,41 @@ if __name__ == "__main__":
                     nquery, net)
 
             print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
-                 Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob))
+                 Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+                 cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob))
             print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
-                 Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre))
-            
+                 Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+                 cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre))
+
             print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
-                 Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob), file=log_file)
+                 Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+                 cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob), file=log_file)
             print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
-                 Rank-20: {:.2%}| mAP: {:.2%}'.format(
-                     cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre), file=log_file)
+                 Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+                 cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre), file=log_file)
 
 
-            map_avg = (map_ob + map_repre) / 2.0
+            map_ = (map_ob + map_repre) / 2.0
             cmc = (cmc_ob + cmc_repre) / 2.0
 
-            print(f"rank-1: {cmc[0]:.2%}, mAP: {map_avg:.2%}")
-            print(f"rank-1: {cmc[0]:.2%}, mAP: {map_avg:.2%}", file=log_file)
+            print(f"rank-1: {cmc[0]:.2%}, mAP: {map_:.2%}")
+            print(f"rank-1: {cmc[0]:.2%}, mAP: {map_:.2%}", file=log_file)
 
             # Save checkpoint weights every args.save_period Epoch
             save_param_list = get_param_list(net)
             if (epoch >= 2) and (epoch % args.save_period) == 0:
                 path = osp.join(checkpoint_path,\
-                    f"epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_avg*100:.2f}_{SUFFIX}.ckpt")
+                    f"epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_*100:.2f}_{SUFFIX}.ckpt")
                 save_checkpoint(save_param_list, path)
 
             # Record the best performance
-            if map_avg > BEST_MAP:
-                BEST_MAP = map_avg
+            if map_ > BEST_MAP:
+                BEST_MAP = map_
 
             if cmc[0] > BEST_R1:
                 best_param_list = save_param_list
                 best_path = osp.join(checkpoint_path,\
-                    f"best_epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_avg*100:.2f}_{SUFFIX}.ckpt")
+                    f"best_epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_*100:.2f}_{SUFFIX}.ckpt")
                 BEST_R1 = cmc[0]
                 BEST_EPOCH = epoch
 
@@ -656,7 +657,7 @@ if __name__ == "__main__":
     print("=> Save best parameters...")
     print("=> Save best parameters...", file=log_file)
     save_checkpoint(best_param_list, best_path)
-    
+
     if args.dataset == "SYSU":
         print(f"For SYSU-MM01 {args.sysu_mode} search, the testing result is:")
         print(f"For SYSU-MM01 {args.sysu_mode} search, the testing result is:", file=log_file)

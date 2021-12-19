@@ -1,10 +1,22 @@
-"""
-Modal Validation
-"""
+# Copyright 2021 Huawei Technologies Co., Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ============================================================================
+""" evalfunc.py """
+
 import os
 import time
 import numpy as np
-import random
 import psutil
 import mindspore.ops as P
 
@@ -34,7 +46,7 @@ def test(args, gallery, query, ngall, nquery,
 
     gall_label = np.zeros((ngall,))
     query_label = np.zeros((nquery,))
-    
+
     gall_feat_ob = np.zeros((ngall, POOLDIM * KINDS)) # 2048 x 4
     gall_feat_repre = np.zeros((ngall, args.z_dim * KINDS))
     for (img, label) in gallery:
@@ -43,9 +55,7 @@ def test(args, gallery, query, ngall, nquery,
 
         size = int(feat_v_ob.shape[0]) # batch size
         ob = cat((feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob))
-        print("ob shape is", ob.shape)
         repre = cat((feat_v_re, feat_v_shared_re, feat_i_re, feat_i_shared_re))
-        print("repre shape is", repre.shape)
 
         gall_feat_ob[ptr : ptr + size, : ] = ob.asnumpy()
         gall_feat_repre[ptr : ptr + size, : ] = repre.asnumpy()
@@ -67,7 +77,7 @@ def test(args, gallery, query, ngall, nquery,
         size = int(feat_v_ob.shape[0])
         ob = cat((feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob))
         repre = cat((feat_v_re, feat_v_shared_re, feat_i_re, feat_i_shared_re))
-        
+
         query_feat_ob[ptr : ptr + size, : ] = ob.asnumpy()
         query_feat_repre[ptr : ptr + size, : ] = repre.asnumpy()
 

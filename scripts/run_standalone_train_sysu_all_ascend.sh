@@ -1,9 +1,9 @@
 #!/bin/sh
 
-myfile="run_standalone_train_sysu_indoor_gpu.sh"
+myfile="run_standalone_train_sysu_all_ascend.sh"
 
 if [ ! -f "$myfile" ]; then
-    echo "Please first enter MVD/scripts/ and run. Exit..."
+    echo "Please first enter MVD/scripts/run_standalone_train and run. Exit..."
     exit 0
 fi
 
@@ -18,11 +18,11 @@ python train.py \
 --data-path "Define your own path/sysu/" \
 --optim adam \
 --lr 0.0035 \
---device-target GPU \
---gpu 0 \
+--device-target Ascend \
+--device-id 0 \
 --pretrain "resnet50.ckpt" \
---tag "sysu_indoor" \
+--tag "sysu_all" \
 --loss-func id+tri \
---sysu-mode indoor \
+--sysu-mode all \
 --epoch 80 \
 --print-per-step 100

@@ -1,10 +1,21 @@
-"""
-Defining Triplet Loss
-"""
-import mindspore as ms
+# Copyright 2021 Huawei Technologies Co., Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ============================================================================
+""" loss.py """
+
 import mindspore.nn as nn
 import mindspore.ops as P
-from mindspore import Tensor
 
 
 class MarginRankingLoss(nn.Cell):
@@ -22,13 +33,19 @@ class MarginRankingLoss(nn.Cell):
         self.sum = P.ReduceSum(keep_dims=True)
         self.mean = P.ReduceMean(keep_dims=True)
 
-    def construct(self, input1, input2, y):
-        temp1 = self.sub(input1, input2)
-        temp2 = self.mul(temp1, y)
-        temp3 = self.add(temp2, self.margin)
-        temp3_mask = self.ge(temp3, 0)
+    def construct(self, input1, input2):
+        """
+        Args:
+            input1: dist_an(anchor negative)
+            input2: dist_ap(anchor positive)
+        """
+        # we want self.margin < dist_an - dist_ap
+        # i.e. dist_ap - dist_an + self.margin < 0
+        temp1 = self.sub(input2, input1)
+        temp2 = self.add(temp1, self.margin)
+        mask = self.ge(temp2, 0)
 
-        loss = self.mean(temp3 * temp3_mask)
+        loss = self.mean(temp2 * mask)
         return loss
 
 
@@ -57,13 +74,10 @@ class OriTripletLoss(nn.Cell):
         self.sqrt = P.Sqrt()
         self.equal = P.Equal()
         self.notequal = P.NotEqual()
-        self.cat = P.Concat()
-        self.ones_like = P.OnesLike()
         self.squeeze = P.Squeeze()
         self.unsqueeze = P.ExpandDims()
         self.max = P.ReduceMax(keep_dims=True)
         self.min = P.ReduceMin(keep_dims=True)
-        self.cat = P.Concat()
         self.matmul = P.MatMul()
         self.expand = P.BroadcastTo((batch_size, batch_size))
 
@@ -94,8 +108,7 @@ class OriTripletLoss(nn.Cell):
         dist_an = self.min(self.max(dist * mask_neg, 1) * mask_pos + dist, 1).squeeze()
 
         # Compute ranking hinge loss
-        y = self.ones_like(dist_an)
-        loss = self.ranking_loss(dist_an, dist_ap, y)
+        loss = self.ranking_loss(dist_an, dist_ap)
 
         # # compute accuracy
         # correct = torch.ge(dist_an, dist_ap).sum().item()
@@ -127,7 +140,7 @@ class CenterTripletLoss(nn.Cell):
         label_uni = self.unique(label)[0]
         targets = self.cat((label_uni, label_uni))
         label_num = len(label_uni)
-        
+
         feat = self.chunk_(input_)
         center = []
         for i in range(label_num * 2):

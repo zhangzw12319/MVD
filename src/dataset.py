@@ -1,6 +1,19 @@
-"""
-Data Loader
-"""
+# Copyright 2021 Huawei Technologies Co., Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ============================================================================
+""" dataset.py """
+
 import os
 import numpy as np
 import random
@@ -228,22 +241,3 @@ def process_test_regdb(img_dir, trial=1, modal='visible'):
             file_label = [int(s.split(' ')[1]) for s in data_file_list]
 
     return file_image, np.array(file_label)
-
-
-def genidx(train_color_label, train_thermal_label):
-    """
-    Generate Index
-    """
-    color_pos = []
-    unique_label_color = np.unique(train_color_label)
-    for i in range(len(unique_label_color)):
-        tmp_pos = [k for k, v in enumerate(train_color_label) if v == unique_label_color[i]]
-        color_pos.append(tmp_pos)
-
-    thermal_pos = []
-    unique_label_thermal = np.unique(train_thermal_label)
-    for i in range(len(unique_label_thermal)):
-        tmp_pos = [k for k, v in enumerate(train_thermal_label) if v == unique_label_thermal[i]]
-        thermal_pos.append(tmp_pos)
-
-    return color_pos, thermal_pos

@@ -13,9 +13,10 @@
 # limitations under the License.
 # ============================================================================
 """ResNet."""
-import mindspore.nn as nn
+
 import mindspore.ops as P
 import mindspore.common.initializer as init
+from mindspore import nn
 from mindspore.common.initializer import Normal, Zero
 from mindspore.train.serialization import load_checkpoint, load_param_into_net
 

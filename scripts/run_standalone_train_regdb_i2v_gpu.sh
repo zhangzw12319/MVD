@@ -13,15 +13,17 @@ cd ..
 #       from project root directory, i.e. /.../DDAG_mindspore/)
 
 python train.py \
+--MSmode PYNATIVE_MODE \
 --dataset RegDB \
---data-path "/home/shz/pytorch/data/regdb/" \
+--data-path "Define your own path/regdb/" \
 --optim adam \
---lr 0.00035 \
+--lr 0.0035 \
 --device-target GPU \
---gpu 2 \
+--gpu 0 \
 --pretrain "resnet50.ckpt" \
---tag "regdb_infrared2visible" \
---loss-func "id" \
---trial "1" \
---regdb_mode "i2v" \
---MSmode "PYNATIVE_MODE"
+--tag "regdb_i2v" \
+--loss-func id+tri \
+--trial 1 \
+--regdb_mode i2v \
+--epoch 80 \
+--print-per-step 30

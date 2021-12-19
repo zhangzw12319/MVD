@@ -3,7 +3,7 @@
 myfile="run_standalone_train_regdb_v2i_gpu.sh"
 
 if [ ! -f "$myfile" ]; then
-    echo "Please first enter MVD/scripts/run_standalone_train and run. Exit..."
+    echo "Please first enter MVD/scripts/ and run. Exit..."
     exit 0
 fi
 
@@ -13,15 +13,17 @@ cd ..
 #       from project root directory, i.e. /.../DDAG_mindspore/)
 
 python train.py \
---MSmode "GRAPH_MODE" \
+--MSmode PYNATIVE_MODE \
 --dataset RegDB \
---data-path "/home/shz/pytorch/data/regdb/" \
+--data-path "Define your own path/regdb/" \
 --optim adam \
---lr 0.00035 \
+--lr 0.0035 \
 --device-target GPU \
---gpu 3 \
+--gpu 0 \
 --pretrain "resnet50.ckpt" \
---tag "regdb_visible2infrared" \
---loss-func "id+tri" \
---trial "1" \
---regdb_mode "v2i"
+--tag "regdb_v2i" \
+--loss-func id+tri \
+--trial 1 \
+--regdb_mode v2i \
+--epoch 80 \
+--print-per-step 30

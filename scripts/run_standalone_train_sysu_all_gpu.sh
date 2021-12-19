@@ -13,15 +13,16 @@ cd ..
 #       from project root directory, i.e. /.../DDAG_mindspore/)
 
 python train.py \
---dataset "SYSU" \
---data-path "/home/shz/pytorch/data/sysu" \
+--MSmode PYNATIVE_MODE \
+--dataset SYSU \
+--data-path "Define your own path/sysu/" \
 --optim adam \
---lr 0.00035 \
+--lr 0.0035 \
 --device-target GPU \
---gpu 2 \
---pretrain "/home/shz/pytorch/zzw/DDAG_mindspore/resnet50.ckpt" \
+--gpu 0 \
+--pretrain "resnet50.ckpt" \
 --tag "sysu_all" \
---loss-func "id" \
---sysu_mode "all" \
---start-epoch 1 \
---epoch 80
+--loss-func id+tri \
+--sysu-mode all \
+--epoch 80 \
+--print-per-step 100

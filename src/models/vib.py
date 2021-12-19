@@ -1,6 +1,19 @@
-"""
-VIB Module
-"""
+# Copyright 2021 Huawei Technologies Co., Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ============================================================================
+""" vib.py """
+
 import mindspore as ms
 import mindspore.nn as nn
 import mindspore.common.initializer as init
@@ -82,11 +95,11 @@ class ChannelCompress(nn.Cell):
         add_block += [nn.BatchNorm1d(num_features=num_bottleneck)]
         add_block += [nn.ReLU()]
 
-        add_block += [nn.Dense(num_bottleneck, 500)]
-        add_block += [nn.BatchNorm1d(500)]
+        add_block += [nn.Dense(num_bottleneck, num_bottleneck // 2)]
+        add_block += [nn.BatchNorm1d( num_bottleneck // 2)]
         add_block += [nn.ReLU()]
 
-        add_block += [nn.Dense(500, out_ch)]
+        add_block += [nn.Dense(num_bottleneck // 2, out_ch)]
 
         add_block = nn.SequentialCell(add_block)
 

@@ -9,7 +9,7 @@ from PIL import Image
 
 parser = argparse.ArgumentParser(description="SYSU-MM01 Preprocessing")
 
-parser.add_argument("--data-path", type=str, default="", help="path to SYSU-MM01 dataset folder")
+parser.add_argument("--data-path", type=str, default="Define your own path/sysu", help="path to SYSU-MM01 dataset folder")
 args = parser.parse_args()
 
 data_path = args.data_path
@@ -78,10 +78,10 @@ def read_imgs(train_image):
 
 # rgb imges
 train_img, train_label = read_imgs(files_rgb)
-np.save(data_path + 'train_rgb_resized_img.npy', train_img)
-np.save(data_path + 'train_rgb_resized_label.npy', train_label)
+np.save(os.path.join(data_path, 'train_rgb_resized_img.npy'), train_img)
+np.save(os.path.join(data_path, 'train_rgb_resized_label.npy'), train_label)
 
 # ir imges
 train_img, train_label = read_imgs(files_ir)
-np.save(data_path + 'train_ir_resized_img.npy', train_img)
-np.save(data_path + 'train_ir_resized_label.npy', train_label)
+np.save(os.path.join(data_path, 'train_ir_resized_img.npy'), train_img)
+np.save(os.path.join(data_path, 'train_ir_resized_label.npy'), train_label)

@@ -1,6 +1,18 @@
-"""
-Main Model
-"""
+# Copyright 2021 Huawei Technologies Co., Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ============================================================================
+""" mvd.py """
 
 import mindspore.ops as P
 
@@ -147,15 +159,11 @@ class MVD(nn.Cell):
         self.cat = P.Concat()
         self.cat_dim1 = P.Concat(axis=1)
 
-    def construct(self, x1, x2=None, mode=1):
+    def construct(self, inputs):
         """
         Construct MVD
         """
-        # visible branch
-        if mode == 0:
-            inputs = self.cat((x1, x2))
-        else:
-            inputs = x1
+
         # backbone 输出为二元组(feature, logits),下同
         v_observation = self.rgb_backbone(inputs)
         v_representation = self.rgb_bottleneck(v_observation[0])
