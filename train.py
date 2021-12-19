@@ -251,11 +251,16 @@ if __name__ == "__main__":
         if args.run_distribute:
             # Ascend target
             if device == "Ascend":
-                if args.device_num > 1:
-                    # not useful now, because we only have one Ascend Device
-                    pass
-            # end of if args.device_num > 1:
                 init()
+                # assert args.device_num > 1
+                context.set_auto_parallel_context(
+                    device_num=get_group_size(), parallel_mode=ParallelMode.DATA_PARALLEL,
+                    gradients_mean=True
+                )
+                # mixed precision setting
+                context.set_auto_parallel_context(
+                    all_reduce_fusion_config=[85, 160])
+
             # GPU target
             else:
                 init()
@@ -264,12 +269,14 @@ if __name__ == "__main__":
                     gradients_mean=True
                 )
                 # mixed precision setting
-                context.set_auto_parallel_context(all_reduce_fusion_config=[85, 160])
-        # end of if target="Ascend":
-    # end of if args.run_distribute:
+                context.set_auto_parallel_context(
+                    all_reduce_fusion_config=[85, 160])
 
         # Adapt to Huawei Cloud: download data from obs to local location
         if device == "Cloud":
+            # Adapt to Cloud: used for downloading data from OBS to docker on the cloud
+            import moxing as mox
+
             # Adapt to Cloud: used for downloading data from OBS to docker on the cloud
             import moxing as mox
 

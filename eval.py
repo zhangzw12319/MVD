@@ -92,7 +92,7 @@ def get_parser():
 
 
     # training configs
-    parser_.add_argument('--device-target', default="CPU", choices=["CPU", "GPU", "Ascend"])
+    parser_.add_argument('--device-target', default="CPU", choices=["CPU", "GPU", "Ascend", "Cloud"])
     parser_.add_argument('--gpu', default='0', type=str, help='set CUDA_VISIBLE_DEVICES')
 
     # Please make sure that the 'device_id' set in context is in the range:[0, total number of GPU).
@@ -100,7 +100,7 @@ def get_parser():
     # the number set in the environment variable 'CUDA_VISIBLE_DEVICES'.
     # For example, if export CUDA_VISIBLE_DEVICES=4,5,6, the 'device_id' can be 0,1,2 at the moment,
     # 'device_id' starts from 0, and 'device_id'=0 means using GPU of number 4.
-    parser_.add_argument('--device-id', default=0, type=str, help='')
+    parser_.add_argument('--device-id', default=0, type=int, help='')
 
     parser_.add_argument('--device-num', default=1, type=int,
                          help='the total number of available gpus')
@@ -176,53 +176,42 @@ if __name__ == "__main__":
         local_data_path = args.data_path
         args.run_distribute = False
     else:
-        if device == "GPU":
+        if device in ["GPU", "Ascend"]:
             local_data_path = args.data_path
             context.set_context(device_id=args.device_id)
 
         if args.parameter_server:
             context.set_ps_context(enable_ps=True)
 
-        # distributed running context setting
-        if args.run_distribute:
-            # Ascend target
-            if device == "Ascend":
-                if args.device_num > 1:
-                    # not useful now, because we only have one Ascend Device
-                    pass
-            # end of if args.device_num > 1:
-                init()
-
-            # GPU target
-            else:
-                init()
-                context.set_auto_parallel_context(
-                    device_num=get_group_size(), parallel_mode=ParallelMode.DATA_PARALLEL,
-                    gradients_mean=True
-                )
-                # mixed precision setting
-                context.set_auto_parallel_context(all_reduce_fusion_config=[85, 160])
-        # end of if target="Ascend":
-    # end of if args.run_distribute:
-
         # Adapt to Huawei Cloud: download data from obs to local location
-        if device == "Ascend":
+        if device == "Cloud":
+            # Adapt to Cloud: used for downloading data from OBS to docker on the cloud
+            import moxing as mox
+
             # Adapt to Cloud: used for downloading data from OBS to docker on the cloud
             import moxing as mox
 
             local_data_path = "/cache/data"
             args.data_path = local_data_path
             print("Download data...")
-            mox.file.copy_parallel(src_url=args.data_url, dst_url=local_data_path)
+            mox.file.copy_parallel(src_url=args.data_url,
+                                   dst_url=local_data_path)
             print("Download complete!(#^.^#)")
-            # print(os.listdir(local_data_path))
+
+            local_pretrainmodel_path = "/cache/pretrain_model"
+            pretrain_temp = args.pretrain
+            args.pretrain = local_pretrainmodel_path + "/resnet50.ckpt"
+            print("Download pretrain model..")
+            mox.file.copy_parallel(src_url=pretrain_temp,
+                                   dst_url=local_pretrainmodel_path)
+            print("Download complete!(#^.^#)")
 
 
     ########################################################################
     # Logging
     ########################################################################
 
-    if device in["GPU", "CPU"]:
+    if device in["GPU", "CPU", "Ascend"]:
         checkpoint_path = os.path.join("logs", args.tag, "test")
         os.makedirs(checkpoint_path, exist_ok=True)
 
@@ -317,10 +306,6 @@ if __name__ == "__main__":
         print("Resume checkpoint:{}". format(args.resume), file=log_file)
         param_dict = load_checkpoint(args.resume)
         load_param_into_net(net, param_dict)
-        if args.resume.split("/")[-1].split("_")[0] != "best":
-            args.resume = int(args.resume.split("/")[-1].split("_")[1])
-        print("Start epoch: {}".format(args.resume))
-        print("Start epoch: {}".format(args.resume), file=log_file)
     else:
         print("Please specify your path to checkpoint file in args.resume!")
         exit()
