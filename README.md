@@ -1,7 +1,5 @@
 # MVD: Multi-view Variational Distillation for Person Re-identification
 
-## 目录
-
 <!-- TOC -->
 
 ## Model Descriptionm
