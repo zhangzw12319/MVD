@@ -55,6 +55,7 @@ def get_parser():
     """
     parser_ = argparse.ArgumentParser(description="DDAG Code Mindspore Version")
 
+    parser_.add_argument("--MSmode", default="GRAPH_MODE", choices=["GRAPH_MODE", "PYNATIVE_MODE"])
     # dataset settings
     parser_.add_argument("--dataset", default='SYSU', choices=['SYSU', 'RegDB'],
                          help='dataset name: RegDB or SYSU')
@@ -164,7 +165,12 @@ if __name__ == "__main__":
     ########################################################################
     device = args.device_target
     # init context
-    context.set_context(mode=context.PYNATIVE_MODE, device_target=device, save_graphs=False)
+    if args.MSmode == "GRAPH_MODE":
+        context.set_context(mode=context.GRAPH_MODE,
+                            device_target=device, save_graphs=False, max_call_depth=3000)
+    else:
+        context.set_context(mode=context.PYNATIVE_MODE,
+                            device_target=device, save_graphs=False, max_call_depth=3000)
 
     if device == "CPU":
         local_data_path = args.data_path
