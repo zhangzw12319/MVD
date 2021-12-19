@@ -15,7 +15,7 @@ cd ..
 python train.py \
 --MSmode PYNATIVE_MODE \
 --dataset SYSU \
---data-path "Define your own path/sysu/" \
+--data-path "/home/yuki/dataset/sysu/" \
 --optim adam \
 --lr 0.0035 \
 --device-target GPU \

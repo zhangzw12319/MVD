@@ -17,7 +17,7 @@ cd ..
 python eval.py \
 --MSmode "PYNATIVE_MODE" \
 --dataset "RegDB" \
---data-path "Define your own path/sysu" \
+--data-path "Define your own path/regdb" \
 --device-target GPU \
 --gpu 0 \
 --resume "XXX.ckpt" \

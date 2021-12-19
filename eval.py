@@ -338,30 +338,29 @@ if __name__ == "__main__":
     query_loader = DatasetHelper(query_loader, dataset_sink_mode=False)
 
     if args.dataset == "SYSU":
-        cmc_v, mAP_v, cmc_i, mAP_i = test(args, gallery_loader, query_loader, ngall,
+        cmc_ob, map_ob, cmc_repre, map_repre = test(args, gallery_loader, query_loader, ngall,\
                                           nquery, net, gallery_cam=gall_cam, query_cam=query_cam)
 
     if args.dataset == "RegDB":
-        cmc_v, mAP_v, cmc_i, mAP_i = test(args, gallery_loader, query_loader, ngall,
+        cmc_ob, map_ob, cmc_repre, map_repre = test(args, gallery_loader, query_loader, ngall,\
                                           nquery, net)
 
-    print('v&v_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} |\
-          Rank-10: {:.2%}| Rank-20: {:.2%}| mAP: {:.2%}'.format(\
-            cmc_v[0], cmc_v[4], cmc_v[9], cmc_v[19], mAP_v))
-    print('v&v_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} |\
-          Rank-10: {:.2%}| Rank-20: {:.2%}| mAP: {:.2%}'.format(\
-            cmc_v[0], cmc_v[4], cmc_v[9], cmc_v[19], mAP_v), file=log_file)
+    print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+            Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+            cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob))
+    print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+            Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+            cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre))
 
+    print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+            Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+            cmc_ob[0], cmc_ob[4], cmc_ob[9], cmc_ob[19], map_ob), file=log_file)
+    print('IB Representation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\
+            Rank-20: {:.2%}| mAP: {:.2%}'.format(\
+            cmc_repre[0], cmc_repre[4], cmc_repre[9], cmc_repre[19], map_repre), file=log_file)
 
-    print('i&i_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} |\
-          Rank-10: {:.2%}| Rank-20: {:.2%}| mAP: {:.2%}'.format(\
-            cmc_i[0], cmc_i[4], cmc_i[9], cmc_i[19], mAP_i))
-    print('i&i_ms:   Rank-1: {:.2%} | Rank-5: {:.2%} |\
-    Rank-10: {:.2%}| Rank-20: {:.2%}| mAP: {:.2%}'.format(\
-        cmc_i[0], cmc_i[4], cmc_i[9], cmc_i[19], mAP_i), file=log_file)
-
-    mAP = (mAP_v + mAP_i) / 2.0
-    cmc = (cmc_v + cmc_i) / 2.0
+    map_ = (map_ob + map_repre) / 2.0
+    cmc = (cmc_ob + cmc_repre) / 2.0
 
 
     print("************************************************************************")
@@ -369,8 +368,14 @@ if __name__ == "__main__":
 
     log_file.flush()
 
-    print(f"mAP: {mAP:.4f}, rank-1: {cmc_i[0]:.4f}")
-    print(f"mAP: {mAP:.4f}, rank-1: {cmc_i[0]:.4f}", file=log_file)
+    if args.dataset == "SYSU":
+        print(f"For SYSU-MM01 {args.sysu_mode} search, the testing result is:")
+        print(f"For SYSU-MM01 {args.sysu_mode} search, the testing result is:", file=log_file)
+    elif args.dataset == "RegDB":
+        print(f"For RegDB {args.regdb_mode} search, the testing result is:")
+        print(f"For RegDB {args.regdb_mode} search, the testing result is:", file=log_file)
 
+    print(f"Best: rank-1: {cmc[0]:.2%}, mAP: {map_:.2%}")
+    print(f"Best: rank-1: {cmc[0]:.2%}, mAP: {map_:.2%}", file=log_file)
     log_file.flush()
     log_file.close()
