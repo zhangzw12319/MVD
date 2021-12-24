@@ -230,8 +230,8 @@ class ResNet(nn.Cell):
             feat = self.bottleneck(x_pool)
             logits = self.classifier(feat)
             return feat, logits
-
-        return x_pool
+        feat = self.bottleneck(x_pool)
+        return feat
 
 
 def resnet50(num_class=395, pretrain=""):

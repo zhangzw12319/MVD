@@ -15,8 +15,8 @@ cd ..
 # if --device-target Ascend, then set --device-id X
 
 python eval.py \
---MSmode "PYNATIVE_MODE" \
---dataset "RegDB" \
+--MSmode GRAPH_MODE \
+--dataset RegDB \
 --data-path "Define your own path/regdb" \
 --device-target Ascend \
 --device-id 0 \

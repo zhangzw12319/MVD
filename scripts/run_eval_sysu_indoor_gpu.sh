@@ -15,8 +15,8 @@ cd ..
 # if --device-target Ascend, then set --device-id X
 
 python eval.py \
---MSmode "PYNATIVE_MODE" \
---dataset "SYSU" \
+--MSmode GRAPH_MODE \
+--dataset SYSU \
 --data-path "Define your own path/sysu" \
 --device-target GPU \
 --gpu 0 \

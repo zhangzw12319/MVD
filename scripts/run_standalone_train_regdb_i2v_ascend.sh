@@ -13,14 +13,14 @@ cd ..
 #       from project root directory, i.e. /.../DDAG_mindspore/)
 
 python train.py \
---MSmode PYNATIVE_MODE \
+--MSmode GRAPH_MODE \
 --dataset RegDB \
 --data-path "Define your own path/regdb/" \
 --optim adam \
 --lr 0.0035 \
 --device-target Ascend \
 --device-id 0 \
---pretrain "resnet50.ckpt" \
+--pretrain "../resnet50.ckpt" \
 --tag "regdb_i2v" \
 --loss-func id+tri \
 --trial 1 \

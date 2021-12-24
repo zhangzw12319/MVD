@@ -13,7 +13,7 @@ cd ..
 #       from project root directory, i.e. /.../DDAG_mindspore/)
 
 python train.py \
---MSmode PYNATIVE_MODE \
+--MSmode GRAPH_MODE \
 --dataset SYSU \
 --data-path "Define your own path/sysu/" \
 --optim adam \
