@@ -226,10 +226,11 @@ class ResNet(nn.Cell):
 
         x_pool = self.avgpool(conv5, (2, 3))
         x_pool = x_pool.view(x_pool.shape[0], x_pool.shape[1])
-        feat = self.bottleneck(x_pool)
-        logits = self.classifier(feat)
-
-        return feat, logits
+        if self.training == True:
+            feat = self.bottleneck(x_pool)
+            logits = self.classifier(feat)
+        logits = self.classifier(x_pool)
+        return x_pool, logits
 
 
 def resnet50(num_class=395, pretrain=""):
