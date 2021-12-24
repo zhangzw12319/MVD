@@ -229,8 +229,9 @@ class ResNet(nn.Cell):
         if self.training == True:
             feat = self.bottleneck(x_pool)
             logits = self.classifier(feat)
-        logits = self.classifier(x_pool)
-        return x_pool, logits
+            return feat, logits
+
+        return x_pool
 
 
 def resnet50(num_class=395, pretrain=""):

@@ -142,9 +142,7 @@ class VIB(nn.Cell):
         """
         construct
         """
-        if self.training == True:
-            z_given_v = self.bottleneck(v)
-        else:
-            z_given_v = v
+
+        z_given_v = self.bottleneck(v)
         logits_given_z = self.classifier(z_given_v)
         return z_given_v, logits_given_z

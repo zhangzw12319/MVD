@@ -166,35 +166,31 @@ class MVD(nn.Cell):
 
         # backbone 输出为二元组(feature, logits),下同
         v_observation = self.rgb_backbone(inputs)
-        v_representation = self.rgb_bottleneck(v_observation[0])
 
         # infarred branch
         x_grey = to_edge(inputs)
         i_ms_input = self.cat_dim1([x_grey, x_grey, x_grey])
 
         i_observation = self.ir_backbone(i_ms_input)
-        i_representation = self.ir_bottleneck(i_observation[0])
 
         # modal shared branch
         v_ms_observation = self.shared_backbone(inputs)
-        v_ms_representation = self.shared_bottleneck(v_ms_observation[0])
 
         i_ms_observation = self.shared_backbone(i_ms_input)
-        i_ms_representation = self.shared_bottleneck(i_ms_observation[0])
 
         if self.training:
+            v_representation = self.rgb_bottleneck(v_observation[0])
+            i_representation = self.ir_bottleneck(i_observation[0])
+            v_ms_representation = self.shared_bottleneck(v_ms_observation[0])
+            i_ms_representation = self.shared_bottleneck(i_ms_observation[0])
+            
             return v_observation, v_representation, v_ms_observation, v_ms_representation, \
                    i_observation, i_representation, i_ms_observation, i_ms_representation
 
-        v_observation = self.l2norm(v_observation[0])
-        v_representation = self.l2norm(v_representation[0])
-        v_ms_observation = self.l2norm(v_ms_observation[0])
-        v_ms_representation = self.l2norm(v_ms_representation[0])
+        v_observation = self.l2norm(v_observation)
+        v_ms_observation = self.l2norm(v_ms_observation)
 
-        i_observation = self.l2norm(i_observation[0])
-        i_representation = self.l2norm(i_representation[0])
-        i_ms_observation = self.l2norm(i_ms_observation[0])
-        i_ms_representation = self.l2norm(i_ms_representation[0])
+        i_observation = self.l2norm(i_observation)
+        i_ms_observation = self.l2norm(i_ms_observation)
 
-        return v_observation, v_representation, v_ms_observation, v_ms_representation,\
-               i_observation, i_representation, i_ms_observation, i_ms_representation
+        return v_observation, v_ms_observation, i_observation, i_ms_observation

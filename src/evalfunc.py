@@ -50,15 +50,12 @@ def test(args, gallery, query, ngall, nquery,
     gall_feat_ob = np.zeros((ngall, POOLDIM * KINDS)) # 2048 x 4
     gall_feat_repre = np.zeros((ngall, args.z_dim * KINDS))
     for (img, label) in gallery:
-        feat_v_ob, feat_v_re, feat_v_shared_ob, feat_v_shared_re,\
-        feat_i_ob, feat_i_re, feat_i_shared_ob, feat_i_shared_re = backbone(img)
+        feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob = backbone(img)
 
         size = int(feat_v_ob.shape[0]) # batch size
         ob = cat((feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob))
-        repre = cat((feat_v_re, feat_v_shared_re, feat_i_re, feat_i_shared_re))
 
         gall_feat_ob[ptr : ptr + size, : ] = ob.asnumpy()
-        gall_feat_repre[ptr : ptr + size, : ] = repre.asnumpy()
         gall_label[ptr : ptr + size] = label.asnumpy()
         ptr = ptr + size
     print(f'Extracting Time :\t {time.time() - start:.3f}')
@@ -71,15 +68,12 @@ def test(args, gallery, query, ngall, nquery,
     query_feat_ob = np.zeros((nquery, POOLDIM * KINDS))
     query_feat_repre = np.zeros((nquery, args.z_dim * KINDS))
     for (img, label) in query:
-        feat_v_ob, feat_v_re, feat_v_shared_ob, feat_v_shared_re,\
-        feat_i_ob, feat_i_re, feat_i_shared_ob, feat_i_shared_re = backbone(img)
+        feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob = backbone(img)
 
         size = int(feat_v_ob.shape[0])
         ob = cat((feat_v_ob, feat_v_shared_ob, feat_i_ob, feat_i_shared_ob))
-        repre = cat((feat_v_re, feat_v_shared_re, feat_i_re, feat_i_shared_re))
 
         query_feat_ob[ptr : ptr + size, : ] = ob.asnumpy()
-        query_feat_repre[ptr : ptr + size, : ] = repre.asnumpy()
 
         query_label[ptr : ptr + size] = label.asnumpy()
 
@@ -89,18 +83,14 @@ def test(args, gallery, query, ngall, nquery,
     start = time.time()
     # compute the similarity
     distmat_ob = np.matmul(query_feat_ob, np.transpose(gall_feat_ob))
-    distmat_repre = np.matmul(query_feat_repre, np.transpose(gall_feat_repre))
-
 
     if args.dataset == "SYSU":
         cmc1, map1 = eval_sysu(-distmat_ob, query_label, gall_label, query_cam, gallery_cam)
-        cmc2, map2 = eval_sysu(-distmat_repre, query_label, gall_label, query_cam, gallery_cam)
 
     elif args.dataset == "RegDB":
         cmc1, map1 = eval_regdb(-distmat_ob, query_label, gall_label)
-        cmc2, map2 = eval_regdb(-distmat_repre, query_label, gall_label)
 
-    return cmc1, map1, cmc2, map2
+    return cmc1, map1
 
 
 def eval_sysu(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=20):

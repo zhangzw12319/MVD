@@ -607,11 +607,11 @@ if __name__ == "__main__":
             query_loader = queryset.batch(batch_size=args.test_batch)
 
             if args.dataset == "SYSU":
-                cmc_ob, map_ob, _, _ = test(args, gallery_loader, query_loader, ngall,\
+                cmc_ob, map_ob = test(args, gallery_loader, query_loader, ngall,\
                     nquery, net, gallery_cam=gall_cam, query_cam=query_cam)
 
             if args.dataset == "RegDB":
-                cmc_ob, map_ob, _, _ = test(args, gallery_loader, query_loader, ngall,\
+                cmc_ob, map_ob = test(args, gallery_loader, query_loader, ngall,\
                     nquery, net)
 
             print('Original Observation:   Rank-1: {:.2%} | Rank-5: {:.2%} | Rank-10: {:.2%}|\

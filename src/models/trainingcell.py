@@ -119,9 +119,9 @@ class OptimizerWithNetAndCriterion(nn.Cell):
         self.grad = P.GradOperation(get_by_list=True)
 
 
-    def construct(self, *inputs):
+    def construct(self, img1, img2, label1, label2):
         weights = self.weights
-        loss = self.network(*inputs)
-        grads = self.grad(self.network, weights)(*inputs)
+        loss = self.network(img1, img2, label1, label2)
+        grads = self.grad(self.network, weights)(img1, img2, label1, label2)
         P.Depend()(loss, self.optimizer(grads))
         return loss
