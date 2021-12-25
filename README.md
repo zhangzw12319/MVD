@@ -55,16 +55,16 @@ Then you can set `--data-path Your own path/dataset/sysu` or `--data-path Your o
 
 ## Environment Requirements
 
-- Hardware
-   - Support Ascend and GPU environment.
-- Framework
-   - [Mindspore](https://www.mindspore.cn)
-- Third Package
-   - Python==3.7.5
-   - Mindspore>=1.3.0(See [Installation](https://www.mindspore.cn/install/))
-   - Cuda==10.1
-   - psutil*==5.8.0
-   - tqdm*==4.62.0
+* Hardware
+   * Support Ascend and GPU environment.
+* Framework
+   * [Mindspore](https://www.mindspore.cn)
+* Third Package
+   * Python==3.7.5
+   * Mindspore>=1.3.0(See [Installation](https://www.mindspore.cn/install/))
+   * Cuda==10.1
+   * psutil*==5.8.0
+   * tqdm*==4.62.0
 
 *Note: these third party package are not stricted a specific version. For more details, please see `requriements.txt`.
 
@@ -344,9 +344,9 @@ FC_att:   Rank-1: 57.42% | Rank-5: 82.59% | Rank-10: 90.91%| Rank-20: 96.17%| mA
 
 ## Description of Random Situation
 
-- In `utils.py`, `IdentitySampler` used to sample different identities and images in both visible and infrared(thermal) modal, and we set random seed in `IndentitySampler`. This randomness will affect both inference part in `train.py` and in `eval.py`. Therefore small different rank-1 and mAP fluctuations(about 1%) between inference in `train.py` and `eval.py` may be seen even on the same training results.
+* In `utils.py`, `IdentitySampler` used to sample different identities and images in both visible and infrared(thermal) modal, and we set random seed in `IndentitySampler`. This randomness will affect both inference part in `train.py` and in `eval.py`. Therefore small different rank-1 and mAP fluctuations(about 1%) between inference in `train.py` and `eval.py` may be seen even on the same training results.
 
-- When testing on RegDB dataset, there is a `--trial` argument specifying which id to be selected; different  `--trial`  choosing may cause slight rank-1 mAP fluctuation.
+* When testing on RegDB dataset, there is a `--trial` argument specifying which id to be selected; different  `--trial`  choosing may cause slight rank-1 mAP fluctuation.
 
 ## Reference
 
