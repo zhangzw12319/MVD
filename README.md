@@ -10,15 +10,13 @@ Mindspore implementation for **Farewell to Mutual Information: Variational Disti
 
 ### Preparation
 
-(1) SYSU-MM01 Dataset [1]: The SYSU-MM01 dataset can be downloaded from this [website](http://isee.sysu.edu.cn/project/RGBIRReID.htm).
+(1) SYSU-MM01 Dataset [1]: The SYSU-MM01 dataset can be obtained from this [website](https://github.com/wuancong/SYSU-MM01).
 
 **run `python pre_process_sysu.py`(in `DDAG_mindspore/third_party/pre_process_sysu.py`) in to prepare the dataset, the training data will be stored in ".npy" format.**
 
 (2) RegDB Dataset [2]: The RegDB dataset can be downloaded from this [website](http://dm.dongguk.edu/link.html) by submitting a copyright form.
 
 (Named: "Dongguk Body-based Person Recognition Database (DBPerson-Recog-DB1)" on their website).
-
-If you have problems for acquiring data, please contact: zhangzw12319@163.com.
 
 ### Recommended Dataset Organization(Example)
 
@@ -51,40 +49,50 @@ dataset
 
 ```
 
-Then you can set `--data-path Your own path/dataset/sysu` or `--data-path Your own path/dataset/regdb` according to above dataset structure. It's OK if you want to customize your data path.  But please note that the important thing is to set path to the folder which directly contains `cam X` etc. directories and ensures `.npy` files also inside(for SYSU-MM01), or to the folder which directly contains `idx` etc. directories(for RegDB).
+**Note**: For SYSU-MM01 dataset, please first check whether it contains the above 4 `.npy` files. If not, please run `MVD/third_party/pre_process_sysu.py` to generate `.npy` files.
 
 ## Environment Requirements
 
 * Hardware
-   * Support Ascend and GPU environment.
+  * Support Ascend and GPU environment.
+  * For Ascend: Ascend 910.
+  * For GPU: cuda==10.1.
 * Framework
-   * [Mindspore](https://www.mindspore.cn)
+  * Mindspore=1.5.0(See [Installation](https://www.mindspore.cn/install/))
 * Third Package
-   * Python==3.7.5
-   * Mindspore>=1.3.0(See [Installation](https://www.mindspore.cn/install/))
-   * Cuda==10.1
-   * psutil*==5.8.0
-   * tqdm*==4.62.0
+  * Python==3.7.5
+  * psutil*==5.8.0
+  * tqdm*==4.62.0
 
 *Note: these third party package are not stricted a specific version. For more details, please see `requriements.txt`.
 
 ## Quick Start
 
-For GPU:
+Example: SYSU-MM01 dataset training and all search inference
+
+On GPU:
 
 ```shell
 cd MVD/scripts/ # please enter this path before sh XXX.sh, otherwise path errors :)
-sh run_standalone_train_sysu_gpu.sh
+bash run_standalone_train_sysu_all_ascend.sh [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]
 ```
 
-or
-
-For Ascend:
+On Ascend:
 
 ```shell
 cd MVD/scripts/ # please enter this path before sh XXX.sh, otherwise path errors :)
-sh run_standalone_train_sysu_ascend.sh
+bash run_standalone_train_sysu_ascend.sh [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]
 ```
+
+Explanation: `[DATASET_PATH]` specifies your own path to  SYSU-MM01 or RegDB dataset. For example, if you organize dataset as [above structure](### Recommended Dataset Organization(Example)), then the path should be `/.../dataset/sysu` or `/.../dataset/regdb` respectively. `[CHECKPOINT_PATH]` specify your path to **resnet50** pretrain `.ckpt` file.
+
+## Pretrain Checkpoint File
+
+`--pretrain` parameter allows you to specify resnet50 checkpoint for pretrain backbone, while `--resume` parameter allows you to specify to previously saved whole network checkpoints to resume training.
+
+We use `/model_zoo/r1.1/resnet50_ascend_v111_imagenet2012_official_cv_bs32_acc76` pretrain file, and the file [link](https://download.mindspore.cn/model_zoo/r1.1/resnet50_ascend_v111_imagenet2012_official_cv_bs32_acc76/).
+
+For convenience, you can rename it as `resnet50.ckpt` and save it directly under `MVD/`, then you can leave `--pretrain resnet50.ckpt` unchanged.
 
 ## Script Description
 
@@ -93,63 +101,105 @@ sh run_standalone_train_sysu_ascend.sh
 ```text
 MVD
 ├── scripts
-│   ├── run_eval.sh
-│   ├── run_standalone_train_regdb_i2v_ascend.sh
-│   ├── run_standalone_train_regdb_i2v_gpu.sh
-│   ├── run_standalone_train_regdb_v2i_ascend.sh
-│   ├── run_standalone_train_regdb_v2i_gpu.sh
-│   ├── run_standalone_train_sysu_all_ascend.sh
-│   ├── run_standalone_train_sysu_all_gpu.sh
-│   ├── run_standalone_train_sysu_indoor_ascend.sh
-│   └── run_standalone_train_sysu_indoor_gpu.sh
+│   ├── run_eval_regdb_i2v_ascend.sh                  # Inference: RegDB dataset infrared to visible on Ascend
+│   ├── run_eval_regdb_i2v_gpu.sh                     # Inference: RegDB dataset infrared to visible on GPU
+│   ├── run_eval_regdb_v2i_ascend.sh                  # Inference: RegDB dataset visible to infrared on Ascend
+│   ├── run_eval_regdb_v2i_gpu.sh                     # Inference: RegDB dataset visible to infrared on GPU
+│   ├── run_eval_sysu_all_ascend.sh                   # Inference: SYSU-MM01 dataset all search on Ascend
+│   ├── run_eval_sysu_all_gpu.sh                      # Inference: SYSU-MM01 dataset all search on GPU
+│   ├── run_eval_sysu_indoor_ascend.sh                # Inference: SYSU-MM01 dataset indoor search on Ascend
+│   ├── run_eval_sysu_indoor_gpu.sh                   # Inference: SYSU-MM01 dataset indoor search on GPU
+│   ├── run_standalone_train_regdb_i2v_ascend.sh      # Training: RegDB dataset infrared to visible on Ascend
+│   ├── run_standalone_train_regdb_i2v_gpu.sh         # Training: RegDB dataset infrared to visible on GPU
+│   ├── run_standalone_train_regdb_v2i_ascend.sh      # Training: RegDB dataset visible to infrared on Ascend
+│   ├── run_standalone_train_regdb_v2i_gpu.sh         # Training: RegDB dataset visible to infrared on GPU
+│   ├── run_standalone_train_sysu_all_ascend.sh       # Training: SYSU-MM01 dataset all search on Ascend
+│   ├── run_standalone_train_sysu_all_gpu.sh          # Training: SYSU-MM01 dataset all search on GPU
+│   ├── run_standalone_train_sysu_indoor_ascend.sh    # Training: SYSU-MM01 dataset indoor search on Ascend
+│   └── run_standalone_train_sysu_indoor_gpu.sh       # Training: SYSU-MM01 dataset indoor search on GPU
 ├── src
-│   ├── dataset.py
-│   ├── evalfunc.py
-│   ├── loss.py
-│   ├── models
-│   │   ├── mvd.py
+│   ├── dataset.py                                    # class and functions for Mindspore dataset
+│   ├── evalfunc.py                                   # for evaluation functions
+│   ├── loss.py                                       # loss functions
+│   ├── models                                        # network architecture
+│   │   ├── mvd.py                                    # main model
 │   │   ├── resnet.py
-│   │   ├── trainingcell.py
-│   │   └── vib.py
+│   │   ├── trainingcell.py                           # combine loss function, optimizer with network architecture
+│   │   └── vib.py                                    # variational information bottleneck
 │   └── utils.py
 ├── third_party
-│   └── pre_process_sysu.py
+│   └── pre_process_sysu.py                           # preprocess SYSU-MM01 dataset to generate .npy format files
 ├── train.py
 ├── eval.py
 ├── requirements.txt
 └── README.md
 ```
 
-### Script Parameters(Example)
+### Script Parameters
 
 ```shell
-# run)standalone_train_sysu_all_gpu.sh as an example
-myfile="run_standalone_train_sysu_all_gpu.sh"
-
-if [ ! -f "$myfile" ]; then
-    echo "Please first enter MVD/scripts/run_standalone_train and run. Exit..."
-    exit 0
+if [ $# != 3 ]
+then
+    echo "Usage: $0 [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]"
+exit 1
 fi
 
-cd ..
+get_real_path(){
+  if [ "${1:0:1}" == "/" ]; then
+    echo "$1"
+  else
+    echo "$(realpath -m $PWD/$1)"
+  fi
+}
 
-# Note: --pretrain, --data-path arguments support global path or relative path(starting
-#       from project root directory, i.e. /.../DDAG_mindspore/)
+PATH1=$(get_real_path $1)
+PATH2=$(get_real_path $2)
+
+if [ ! -d $PATH1 ]
+then
+    echo "error: DATASET_PATH=$PATH1 is not a directory"
+exit 1
+fi
+
+if [ ! -f $PATH2 ]
+then
+    echo "error: CHECKPOINT_PATH=$PATH2 is not a file"
+exit 1
+fi
+
+ulimit -u unlimited
+export DEVICE_NUM=1
+export DEVICE_ID=$3
+export RANK_SIZE=$DEVICE_NUM
+export RANK_ID=0
+
+if [ -d "train" ];
+then
+    rm -rf ./train
+fi
+mkdir ./train
+cp ../*.py ./train
+cp *.sh ./train
+cp -r ../src ./train
+cd ./train || exit
+env > env.log
+echo "start evaluation for device $DEVICE_ID"
 
 python train.py \
---MSmode PYNATIVE_MODE \
+--MSmode GRAPH_MODE \
 --dataset SYSU \
---data-path "Define your own path/sysu/" \
+--data_path $PATH1 \
 --optim adam \
 --lr 0.0035 \
---device-target GPU \
---gpu 0 \
---pretrain "resnet50.ckpt" \
+--device_target Ascend \
+--device_id $DEVICE_ID \
+--pretrain $PATH2 \
 --tag "sysu_all" \
 --loss-func id+tri \
---sysu-mode all \
+--sysu_mode all \
 --epoch 80 \
---print-per-step 100
+--print-per-step 100 &> log &
+cd ..
 ```
 
 The following table describes the most commonly used arguments. You can change freely as you want.
@@ -157,16 +207,16 @@ The following table describes the most commonly used arguments. You can change f
 | Config Arguments  |                         Explanation                          |
 | :---------------: | :----------------------------------------------------------: |
 |    `--MSmode`     | Mindspore running mode, either 'GRAPH_MODE' or 'PYNATIVE_MODE'. |
-| `--device-target` |              choose "GPU", "Ascend" or "Cloud"               |
+| `--device_target` |              choose "GPU", "Ascend" or "Cloud"               |
 |    `--dataset`    |              which dataset, "SYSU" or "RegDB".               |
-|      `--gpu`      | which gpu to run(default: 0), only effective when `--device-target GPU` |
-|   `--device-id`   | which Ascend AI core to run(default:0), only effective when `--device-target Ascend` |
-|   `--data-path`   | manually define the data path(for `SYSU`, path folder must contain `.npy` files, see [`pre_process_sysu.py`](#anchor1) ). |
+|      `--gpu`      | which gpu to run(default: 0), only effective when `--device_target GPU` |
+|   `--device_id`   | which Ascend AI core to run(default:0), only effective when `--device_target Ascend` |
+|   `--data_path`   | manually define the data path(for `SYSU`, path folder must contain `.npy` files, see [`pre_process_sysu.py`](#anchor1) ). |
 |   `--pretrain`    | specify resnet-50 pretrain file path(default "" for no ckpt file)* |
 |    `--resume`     | specify checkpoint file path for whole model(default "" for no ckpt file, `--resume` loads weights after `--pretrain`, and thus will overwrite `--pretrain` weights)* |
-|   `--sysu-mode`   | choose from `["all", "indoor"]`, only effective when `args.dataset=SYSU` |
-|  `--regdb-mode`   | choose from `["i2v", "v2i"]`, only effective when `args.dataset=RegDB` |
-|  `--save-period`  | specify  every XXX epochs to save network weights into checkpoint files |
+|   `--sysu_mode`   | choose from `["all", "indoor"]`, only effective when `args.dataset=SYSU` |
+|  `--regdb_mode`   | choose from `["i2v", "v2i"]`, only effective when `args.dataset=RegDB` |
+|  `--save_period`  | specify  every XXX epochs to save network weights into checkpoint files |
 
 ***Note: Please note that mindspore compulsorily requires checkpoint files have `.cpkt` as file suffix, otherwise may trigger errors during loading.**
 
@@ -176,12 +226,11 @@ We recommend that these following hyper-parameters in `.sh` files should be kept
 | :--------------: | :----------------------------------------------------------: |
 |    `--optim`     |             choose "adam" or "sgd"(default adam)             |
 |      `--lr`      |     initial learning rate( 0.0035 for adam, 0.1 for sgd)     |
-|     `--tags`     | (optional, but strongly recommended): You can name(tag) your experiments to organize you logs file, e.g. specifying `--tag Exp_1` will put your log files into "logs/Exp_1/XXX/".Default value is "toy", which means toy experiments(e.g. debugging logs). Fore more information, see [log organization](#log) |
 |    `--epoch`     | the total number of training epochs, by default 80 Epochs(may be different from original paper). |
-| `--warmup-steps` |                warm-up strategy, by default 5                |
-| `--start-decay`  |         the start epoch of lr decay, by default 15.          |
-|  `--end-decay`   |        the ending epoch of lr decay , by default 27.         |
-|  `--loss-func`   | for ablation study, by default "id+tri" which is cross-entropy loss plus triplet loss. You can choose from `["id", "id+tri"]`. |
+| `--warmup_steps` |                warm-up strategy, by default 5                |
+| `--start_decay`  |         the start epoch of lr decay, by default 15.          |
+|  `--end_decay`   |        the ending epoch of lr decay , by default 27.         |
+|  `--loss_func`   | for ablation study, by default "id+tri" which is cross-entropy loss plus triplet loss. You can choose from `["id", "id+tri"]`. |
 
 For more detailed and comprehensive arguments description, please refer to `train.py`.
 
@@ -193,55 +242,28 @@ For GPU:
 
 ```shell
 cd MVD/scripts/ # please enter this path before sh XXX.sh, otherwise path errors :)
-sh run_standalone_train_sysu_all_gpu.sh
+bash run_standalone_train_sysu_all_gpu.sh [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]
 ```
 
 For Ascend：
 
 ```shell
 cd MVD/scripts/ # please enter this path before sh XXX.sh, otherwise path errors :)
-sh run_standalone_train_sysu_all_ascend.sh
+bash run_standalone_train_sysu_all_ascend.sh [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]
 ```
 
 You can replace `run_standalone_train_sysu_all_gpu.sh` or `run_standalone_train_sysu_all_ascend.sh` with other training scripts.
 
-### Transfer Training(Optional)
-
-`--pretrain` parameter allows you to specify resnet50 checkpoint for pretraining, while `--resume` parameter allows you to specify to previously saved network checkpoints to resume training.
-
-We use checkpoint from resnet50 pretrained on ImageNet, and the file [link](https://download.mindspore.cn/model_zoo/r1.1/resnet50_ascend_v111_imagenet2012_official_cv_bs32_acc76/).
-
-For convenience, you can rename it `resnet50.ckpt` and save it directly under `MVD/`, then you can leave `--pretrain resnet50.ckpt` unchanged for convenience.
-
 ### Training Result
 
-Training checkpoint will be stored in `logs/args.tag/training`, in which args.tag is specified before. The log <a id="log">organization</a> is like following.  It will be generated when you run `.sh` script and start training.
+Training logs and corresponding checkpoint files will be stored in:
 
-```text
-logs
-├── regdb_i2v
-│   └── training
-│   │   ├── epoch_60_rank1_65.51_mAP_62.42_RegDB_batch-size_2*8*4=64_adam_lr_0.0035_loss-func_id+tri_trial_1_main.ckpt
-│   │   └── RegDB_batch-size_2*8*4=64_adam_lr_0.0035_loss-func_id+tri_trial_1_main_performance_2021-12-19_10-26-03.txt
-│   └── testing
-│       ├── ...
-...
-```
+* SYSU-MM01 dataset + all search: `/scripts/train_sysu_all/SYSU_train_performance.txt`
+* SYSU-MM01 dataset + indoor search: `/scripts/train_sysu_indoor/SYSU_train_performance.txt`
+* RegDB dataset + visible to infrared(v2i): `/scripts/train_regdb_v2i/RegDB_train_performance.txt`
+* RegDB dataset + infrared to visible(i2v): `/scripts/train_regdb_i2v/RegDB_train_performance.txt`
 
-In `training` subdirectory,  `.txt` files are log files and `.ckpt` files are checkpoint files.
-
-You will get result from training log file like the following:
-
-```text
-==> Start Training...
-Epoch: [1][100/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:21.7580   id:9.3309   tri:12.4270   Batch Time:1.19  Accuracy:0.40
-Epoch: [1][200/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:19.3218   id:9.1066   tri:10.2152   Batch Time:1.17  Accuracy:0.63
-Epoch: [1][300/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:18.7310   id:8.8001   tri:9.9309   Batch Time:1.16  Accuracy:1.03
-Epoch: [1][400/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:16.9942   id:8.4224   tri:8.5718   Batch Time:1.16  Accuracy:1.55
-Epoch: [1][500/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:16.3901   id:8.1935   tri:8.1966   Batch Time:1.15  Accuracy:2.10
-Epoch: [1][600/696]   Convolution LR: 0.0007000   IB & Classifier LR: 0.0000700    Loss:15.1044   id:7.8598   tri:7.2447   Batch Time:1.15  Accuracy:2.74
-...
-```
+`.txt` files are training performance and `.ckpt` files are checkpoint files.
 
 At the end of every epoch training, `train.py` will use a random testing set (different from training set) to evaluate the model performance. So you will see rank-1 and mAP performance. And this programming pattern of evaluation is analogy to `test.py`.
 
@@ -249,32 +271,30 @@ At the end of every epoch training, `train.py` will use a random testing set (di
 
 ### Evaluation Process
 
-For GPU：
+On GPU：
 
 ```shell
 cd MVD/scripts/ # please enter this path before sh XXX.sh, otherwise path errors :)
-sh run_eval_sysu_all_gpu.sh
+bash run_eval_sysu_all_gpu.sh [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]
 ```
 
-For Ascend:
+On Ascend:
 
 ```shell
 cd DDAG_mindspore/scripts/ # please enter this path before sh XXX.sh, otherwise path errors :)
-sh run_eval_sysu_all_ascend.sh
+bash run_eval_sysu_all_ascend.sh [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]
 ```
+
+Explanation: `[DATASET_PATH]` specifies your own path to  SYSU-MM01 or RegDB dataset, same as [Quick Start](## Quick Start) section. `[CHECKPOINT_PATH]` specifies your **saved checkpoint files during training**, not resnet50.
 
 ### Evaluation Result
 
-Before you start testing, please set `--resume` in `run_eval_XXX.sh` . You can find your saved checkpoints in corresponding `/logs/args.tag/training/` path.  After running `run_eval_XXX.sh`, you will get result from testing log file like the following:
+After running `bash run_eval_XXX.sh [DATASET_PATH] [CHECKPOINT_PATH]`, you will get direct inference result.
 
-```text
-Resume checkpoint:/.../logs/sysu_all_part_graph/training/epoch_25_rank1_57.04_mAP_55.76_SYSU_batch-size_2*8*4=64_adam_lr_0.0035_loss-func_id+tri_P_3_Graph__main.ckpt
-Start epoch: 25
-For SYSU-MM01 all search, the testing result is:
-FC:   Rank-1: 56.96% | Rank-5: 82.83% | Rank-10: 91.04%| Rank-20: 96.04%| mAP: 55.28%
-FC_att:   Rank-1: 57.42% | Rank-5: 82.59% | Rank-10: 90.91%| Rank-20: 96.17%| mAP: 55.33%
-******************************************************************************
-```
+* SYSU-MM01 dataset + all search: `/scripts/eval_sysu_all/SYSU_train_performance.txt`
+* SYSU-MM01 dataset + indoor search: `/scripts/eval_sysu_indoor/SYSU_train_performance.txt`
+* RegDB dataset + visible to infrared(v2i): `/scripts/eval_regdb_v2i/RegDB_train_performance.txt`
+* RegDB dataset + infrared to visible(i2v): `/scripts/eval_regdb_i2v/RegDB_train_performance.txt`
 
 ## Performance
 
@@ -314,31 +334,31 @@ FC_att:   Rank-1: 57.42% | Rank-5: 82.59% | Rank-10: 90.91%| Rank-20: 96.17%| mA
 
 ### SYSU-MM01 (all-search mode)
 
-| Metric | Value(Pytorch) | Value(Mindspore, GPU) |
-| :----: | :------------: | :-------------------: |
-| Rank-1 |     60.02%     |        60.08%         |
-|  mAP   |     58.80%     |        57.55%         |
+| Metric | Value(Pytorch) | Value(Mindspore, GPU) | Value(Mindspore, Ascend 910) |
+| :----: | :------------: | :-------------------: | :--------------------------: |
+| Rank-1 |     60.02%     |        60.08%         |            58.64%            |
+|  mAP   |     58.80%     |        57.55%         |            57.57%            |
 
 ### SYSU-MM01 (indoor-search mode)
 
-| Metric | Value(Pytorch) | Value(Mindspore, GPU) |
-| :----: | :------------: | :-------------------: |
-| Rank-1 |     66.05%     |        69.57%         |
-|  mAP   |     72.98%     |        73.13%         |
+| Metric | Value(Pytorch) | Value(Mindspore, GPU) | Value(Mindspore, Ascend 910) |
+| :----: | :------------: | :-------------------: | :--------------------------: |
+| Rank-1 |     66.05%     |        69.57%         |                              |
+|  mAP   |     72.98%     |        73.13%         |                              |
 
 ### RegDB(Visible-Thermal)
 
-| Metric | Value(Pytorch) | Value(Mindspore, GPU, --trial 1) |
-| :----: | :------------: | :------------------------------: |
-| Rank-1 |     73.20%     |              76.50%              |
-|  mAP   |     71.60%     |              72.35%              |
+| Metric | Value(Pytorch) | Value(Mindspore, GPU, --trial 1) | Value(Mindspore, Ascend 910, -- trial 1) |
+| :----: | :------------: | :------------------------------: | :--------------------------------------: |
+| Rank-1 |     73.20%     |              77.91%              |                  77.28%                  |
+|  mAP   |     71.60%     |              72.35%              |                  72.44%                  |
 
 ### RegDB(Thermal-Visible)
 
-| Metric | Value(Pytorch) | Value(Mindspore, GPU, --trial 1) |
-| :----: | :------------: | :------------------------------: |
-| Rank-1 |     71.80%     |              77.91%              |
-|  mAP   |     70.10%     |              71.37%              |
+| Metric | Value(Pytorch) | Value(Mindspore, GPU, --trial 1) | Value(Mindspore, Ascend 910, --trial 1) |
+| :----: | :------------: | :------------------------------: | :-------------------------------------: |
+| Rank-1 |     71.80%     |              76.50%              |                 76.07%                  |
+|  mAP   |     70.10%     |              71.37%              |                 70.37%                  |
 
 ***Note**: The aforementioned pytorch results can be seen in original [pytorch repo](https://github.com/FutabaSakuraXD/Farewell-to-Mutual-Information-Variational-Distiilation-for-Cross-Modal-Person-Re-identification).
 
