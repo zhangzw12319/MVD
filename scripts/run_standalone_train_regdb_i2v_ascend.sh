@@ -14,9 +14,9 @@
 # limitations under the License.
 # ============================================================================
 
-if [ $# != 2 ]
+if [ $# != 3 ]
 then
-    echo "Usage: $0 [DATASET_PATH] [CHECKPOINT_PATH]"
+    echo "Usage: $0 [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]"
 exit 1
 fi
 
@@ -45,35 +45,33 @@ fi
 
 ulimit -u unlimited
 export DEVICE_NUM=1
-export DEVICE_ID=0
+export DEVICE_ID=$3
 export RANK_SIZE=$DEVICE_NUM
 export RANK_ID=0
 
-if [ -d "train" ];
+if [ -d "train_regdb_i2v" ];
 then
-    rm -rf ./train
+    rm -rf ./train_regdb_i2v
 fi
-mkdir ./train
-cp ../*.py ./train
-cp *.sh ./train
-cp -r ../src ./train
-cd ./train || exit
+mkdir ./train_regdb_i2v
+cp ../*.py ./train_regdb_i2v
+cp -r ../src ./train_regdb_i2v
+cd ./train_regdb_i2v || exit
 env > env.log
-echo "start evaluation for device $DEVICE_ID"
+echo "start training for device $DEVICE_ID"
 
 python train.py \
 --MSmode GRAPH_MODE \
 --dataset RegDB \
---data-path $PATH1 \
+--data_path $PATH1 \
 --optim adam \
 --lr 0.0035 \
---device-target Ascend \
---device-id $DEVICE_ID \
+--device_target Ascend \
+--device_id $DEVICE_ID \
 --pretrain $PATH2 \
---tag "regdb_i2v" \
---loss-func id+tri \
+--loss_func id+tri \
 --trial 1 \
 --regdb_mode i2v \
 --epoch 80 \
---print-per-step 30 &> log &
+--print_per_step 30 &> log &
 cd ..

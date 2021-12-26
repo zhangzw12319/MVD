@@ -55,36 +55,36 @@ def get_parser():
     # dataset settings
     psr.add_argument("--dataset", default='SYSU', choices=['SYSU', 'RegDB'],
                      help='dataset name: RegDB or SYSU')
-    psr.add_argument('--data-path', type=str, default='data')
+    psr.add_argument('--data_path', type=str, default='data')
     # Only used on Huawei Cloud OBS service,
     # when this is set, --data_path is overridden by --data-url
     psr.add_argument("--data_url", type=str, default=None)
-    psr.add_argument('--batch-size', default=8, type=int,
+    psr.add_argument('--batch_size', default=8, type=int,
                      metavar='B', help='the number of person IDs in a batch')
-    psr.add_argument('--test-batch', default=64, type=int,
+    psr.add_argument('--test_batch', default=64, type=int,
                      metavar='tb', help='testing batch size')
-    psr.add_argument('--num-pos', default=4, type=int,
+    psr.add_argument('--num_pos', default=4, type=int,
                      help='num of pos per identity in each modality')
     psr.add_argument('--trial', default=1, type=int,
                      metavar='t', help='trial (only for RegDB dataset)')
 
 
     # image transform
-    psr.add_argument('--img-w', default=144, type=int,
+    psr.add_argument('--img_w', default=144, type=int,
                      metavar='imgw', help='img width')
-    psr.add_argument('--img-h', default=288, type=int,
+    psr.add_argument('--img_h', default=288, type=int,
                      metavar='imgh', help='img height')
 
 
     # model
     psr.add_argument('--arch', default='resnet50', type=str,
                      help='network baseline:resnet50')
-    psr.add_argument('--z-dim', default=512, type=int,
+    psr.add_argument('--z_dim', default=512, type=int,
                      help='information bottleneck z dim')
 
 
     # loss setting
-    psr.add_argument('--loss-func', default="id+tri", type=str,
+    psr.add_argument('--loss_func', default="id+tri", type=str,
                      help='specify loss function type', choices=["id", "id+tri"])
     psr.add_argument('--triloss', default=["OriTri", "CenterTri"])
     psr.add_argument('--drop', default=0.2, type=float,
@@ -98,33 +98,33 @@ def get_parser():
                      help='learning rate, 0.0035 for adam; 0.1 for sgd')
     psr.add_argument('--optim', default='adam', type=str, choices=['adam', 'sgd'],
                      help='optimizer')
-    psr.add_argument("--warmup-steps", default=5, type=int,
+    psr.add_argument("--warmup_steps", default=5, type=int,
                      help='warmup steps')
-    psr.add_argument("--start-decay", default=15, type=int,
+    psr.add_argument("--start_decay", default=15, type=int,
                      help='weight decay start epoch(included)')
-    psr.add_argument("--end-decay", default=27, type=int,
+    psr.add_argument("--end_decay", default=27, type=int,
                      help='weight decay end epoch(included)')
-    psr.add_argument("--decay-factor", default=0.5, type=int)
+    psr.add_argument("--decay_factor", default=0.5, type=int)
 
     # training configs
     psr.add_argument('--epoch', default=80, type=int,
                      metavar='epoch', help='epoch num')
-    psr.add_argument('--start-epoch', default=1, type=int,
+    psr.add_argument('--start_epoch', default=1, type=int,
                      help='start training epoch')
-    psr.add_argument('--device-target', default="GPU",
+    psr.add_argument('--device_target', default="GPU",
                      choices=["GPU", "Ascend", "Cloud"])
     psr.add_argument('--gpu', default='0', type=str,
                      help='set CUDA_VISIBLE_DEVICES')
-    psr.add_argument('--print-per-step', default=100, type=int)
+    psr.add_argument('--print_per_step', default=100, type=int)
 
     # Please make sure that the 'device_id' set in context is in the range:[0, total number of GPU).
     #  If the environment variable 'CUDA_VISIBLE_DEVICES' is set, the total number of GPU will be
     # the number set in the environment variable 'CUDA_VISIBLE_DEVICES'.
     #  For example, if export CUDA_VISIBLE_DEVICES=4,5,6, the 'device_id' can be 0,1,2 at the
     # moment, 'device_id' starts from 0, and 'device_id'=0 means using GPU of number 4.
-    psr.add_argument('--device-id', default=0, type=int, help='')
+    psr.add_argument('--device_id', default=0, type=int, help='')
 
-    psr.add_argument('--device-num', default=1, type=int,
+    psr.add_argument('--device_num', default=1, type=int,
                      help='the total number of available gpus')
     psr.add_argument('--resume', '-r', default='', type=str,
                      help='resume from checkpoint, no resume:""')
@@ -133,18 +133,17 @@ def get_parser():
                      help='Pretrain resnet-50 checkpoint path, no pretrain: ""')
     psr.add_argument('--run_distribute', action='store_true',
                      help="if true, will be run on distributed architecture with mindspore")
-    psr.add_argument('--parameter-server', default=False)
-    psr.add_argument('--save-period', default=10, type=int,
+    psr.add_argument('--parameter_server', default=False)
+    psr.add_argument('--save_period', default=10, type=int,
                      help=" save checkpoint file every args.save_period epochs")
 
 
     # logging configs
-    psr.add_argument('--tag', default='toy', type=str, help='logfile suffix name')
-    psr.add_argument("--branch-name", default="main",
+    psr.add_argument("--branch_name", default="main",
                      help="Github branch name, for ablation study tagging")
 
     # testing / evaluation config
-    psr.add_argument('--sysu-mode', default='all', type=str,
+    psr.add_argument('--sysu_mode', default='all', type=str,
                      help=' test all or indoor search(only for SYSU-MM01)')
     psr.add_argument('--regdb_mode', default='v2i', type=str, choices=["v2i", "i2v"],\
         help='v2i: visible to infrared search; i2v:infrared to visible search.(Only for RegDB)')
@@ -302,23 +301,7 @@ if __name__ == "__main__":
     loader_batch = args.batch_size * args.num_pos
 
     if device in ("GPU", "CPU", "Ascend"):
-        checkpoint_path = os.path.join("logs", args.tag, "training")
-        os.makedirs(checkpoint_path, exist_ok=True)
-
-        SUFFIX = str(args.dataset)
-
-        SUFFIX = SUFFIX + f'_batch-size_2*{args.batch_size}*{args.num_pos}={2 * loader_batch}'
-        SUFFIX = SUFFIX + f'_{args.optim}_lr_{args.lr}'
-        SUFFIX = SUFFIX + f'_loss-func_{args.loss_func}'
-
-        if args.dataset == 'RegDB':
-            SUFFIX = SUFFIX + f'_trial_{args.trial}'
-
-        SUFFIX = SUFFIX + "_" + args.branch_name
-
-        time_msg = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-        log_file = open(osp.join(checkpoint_path, f"{SUFFIX}_performance_{time_msg}.txt"),
-                        "w", encoding="utf-8")
+        log_file = open(args.dataset + "_train_performance.txt", "w", encoding="utf-8")
         print(f'Args: {args}')
         print(f'Args: {args}', file=log_file)
 
@@ -483,6 +466,8 @@ if __name__ == "__main__":
     BEST_MAP = 0.0
     BEST_R1 = 0.0
     BEST_EPOCH = 0
+    best_param_list = None
+    best_path = None
     for epoch in range(START_EPOCH, args.epoch + 1):
 
         print('==> Preparing Data Loader...')
@@ -535,11 +520,6 @@ if __name__ == "__main__":
         print('==> Start Training...', file=log_file)
         log_file.flush()
 
-        BEST_MAP = 0.0
-        BEST_R1 = 0.0
-        BEST_EPOCH = 0
-        best_param_list = None
-        best_path = None
 
         for BATCH_IDX, (img1, img2, label1, label2) in enumerate(tqdm(dataset_helper)):
             label1 = ms.Tensor(label1, dtype=ms.float32)
@@ -591,6 +571,7 @@ if __name__ == "__main__":
                               ), file=log_file)
                 log_file.flush()
 
+
         ########################################################################
         # Epoch Evaluation
         ########################################################################
@@ -598,11 +579,11 @@ if __name__ == "__main__":
         if epoch > 0:
 
             net.set_train(mode=False)
-            gallset = ds.GeneratorDataset(gallset_generator, ["img", "label"])
+            gallset = ds.GeneratorDataset(gallset_generator, ["img", "label"], shuffle=True)
             gallset = gallset.map(operations=transform_test, input_columns=["img"])
             gallery_loader = gallset.batch(batch_size=args.test_batch)
 
-            queryset = ds.GeneratorDataset(queryset_generator, ["img", "label"])
+            queryset = ds.GeneratorDataset(queryset_generator, ["img", "label"], shuffle=True)
             queryset = queryset.map(operations=transform_test, input_columns=["img"])
             query_loader = queryset.batch(batch_size=args.test_batch)
 
@@ -632,8 +613,7 @@ if __name__ == "__main__":
             # Save checkpoint weights every args.save_period Epoch
             save_param_list = get_param_list(net)
             if (epoch >= 2) and (epoch % args.save_period) == 0:
-                path = osp.join(checkpoint_path,\
-                    f"epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_*100:.2f}_{SUFFIX}.ckpt")
+                path = f"epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_*100:.2f}.ckpt"
                 save_checkpoint(save_param_list, path)
 
             # Record the best performance
@@ -641,9 +621,9 @@ if __name__ == "__main__":
                 BEST_MAP = map_
 
             if cmc[0] > BEST_R1:
+                print(epoch, "  ", cmc[0], " ", BEST_R1)
                 best_param_list = save_param_list
-                best_path = osp.join(checkpoint_path,\
-                    f"best_epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_*100:.2f}_{SUFFIX}.ckpt")
+                best_path = f"best_epoch_{epoch:02}_rank1_{cmc[0]*100:.2f}_mAP_{map_*100:.2f}.ckpt"
                 BEST_R1 = cmc[0]
                 BEST_EPOCH = epoch
 

@@ -14,9 +14,9 @@
 # limitations under the License.
 # ============================================================================
 
-if [ $# != 2 ]
+if [ $# != 3 ]
 then
-    echo "Usage: bash $0 [DATASET_PATH] [CHECKPOINT_PATH]"
+    echo "Usage: bash $0 [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]"
 exit 1
 fi
 
@@ -45,29 +45,27 @@ fi
 
 ulimit -u unlimited
 export DEVICE_NUM=1
-export DEVICE_ID=0
+export DEVICE_ID=$3
 export RANK_SIZE=$DEVICE_NUM
 export RANK_ID=0
 
-if [ -d "eval" ];
+if [ -d "eval_sysu_indoor" ];
 then
-    rm -rf ./eval
+    rm -rf ./eval_sysu_indoor
 fi
-mkdir ./eval
-cp ../*.py ./eval
-cp *.sh ./eval
-cp -r ../src ./eval
-cd ./eval || exit
+mkdir ./eval_sysu_indoor
+cp ../*.py ./eval_sysu_indoor
+cp -r ../src ./eval_sysu_indoor
+cd ./eval_sysu_indoor || exit
 env > env.log
 echo "start evaluation for device $DEVICE_ID"
 
 python eval.py \
 --MSmode GRAPH_MODE \
 --dataset SYSU \
---data-path $PATH1 \
---device-target Ascend \
---device-id $DEVICE_ID \
+--data_path $PATH1 \
+--device_target Ascend \
+--device_id $DEVICE_ID \
 --resume $PATH2 \
---sysu-mode indoor \
---tag "sysu_indoor" &> log &
+--sysu_mode indoor &> log &
 cd ..

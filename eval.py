@@ -57,26 +57,26 @@ def get_parser():
     # dataset settings
     parser_.add_argument("--dataset", default='SYSU', choices=['SYSU', 'RegDB'],
                          help='dataset name: RegDB or SYSU')
-    parser_.add_argument('--data-path', type=str, default='data')
+    parser_.add_argument('--data_path', type=str, default='data')
     # Only used on Huawei Cloud OBS service,
     # when this is set, --data_path is overridden by --data-url
-    parser_.add_argument("--data-url", type=str, default=None)
+    parser_.add_argument("--data_url", type=str, default=None)
     parser_.add_argument('--trial', default=1, type=int,
                          metavar='t', help='trial (only for RegDB dataset)')
-    parser_.add_argument('--test-batch', default=64, type=int,
+    parser_.add_argument('--test_batch', default=64, type=int,
                          metavar='tb', help='testing batch size')
 
     # image transform
-    parser_.add_argument('--img-w', default=144, type=int,
+    parser_.add_argument('--img_w', default=144, type=int,
                          metavar='imgw', help='img width')
-    parser_.add_argument('--img-h', default=288, type=int,
+    parser_.add_argument('--img_h', default=288, type=int,
                          metavar='imgh', help='img height')
 
 
     # model
     parser_.add_argument('--arch', default='resnet50', type=str,
                          help='network baseline:resnet50')
-    parser_.add_argument('--z-dim', default=512, type=int,
+    parser_.add_argument('--z_dim', default=512, type=int,
                          help='information bottleneck z dim')
 
 
@@ -90,7 +90,7 @@ def get_parser():
 
 
     # training configs
-    parser_.add_argument('--device-target', default="CPU", choices=["CPU", "GPU", "Ascend", "Cloud"])
+    parser_.add_argument('--device_target', default="CPU", choices=["CPU", "GPU", "Ascend", "Cloud"])
     parser_.add_argument('--gpu', default='0', type=str, help='set CUDA_VISIBLE_DEVICES')
 
     # Please make sure that the 'device_id' set in context is in the range:[0, total number of GPU).
@@ -98,13 +98,13 @@ def get_parser():
     # the number set in the environment variable 'CUDA_VISIBLE_DEVICES'.
     # For example, if export CUDA_VISIBLE_DEVICES=4,5,6, the 'device_id' can be 0,1,2 at the moment,
     # 'device_id' starts from 0, and 'device_id'=0 means using GPU of number 4.
-    parser_.add_argument('--device-id', default=0, type=int, help='')
+    parser_.add_argument('--device_id', default=0, type=int, help='')
 
-    parser_.add_argument('--device-num', default=1, type=int,
+    parser_.add_argument('--device_num', default=1, type=int,
                          help='the total number of available gpus')
     parser_.add_argument('--resume', '-r', default='', type=str,
                          help='resume from checkpoint, no resume:""')
-    parser_.add_argument('--run-distribute', action='store_true',
+    parser_.add_argument('--run_distribute', action='store_true',
                          help="if set true, this code will be run on distributed")
     parser_.add_argument('--parameter-server', default=False)
 
@@ -114,9 +114,9 @@ def get_parser():
                          help='ckpt suffix name')
 
     # testing / evaluation config
-    parser_.add_argument('--sysu-mode', default='all', type=str, choices=['all', 'indoor'],
+    parser_.add_argument('--sysu_mode', default='all', type=str, choices=['all', 'indoor'],
                          help='all or indoor')
-    parser_.add_argument('--regdb-mode', default='v2i', type=str, choices=["v2i", "i2v"],
+    parser_.add_argument('--regdb_mode', default='v2i', type=str, choices=["v2i", "i2v"],
                          help='visible to infrared search;infrared to visible search.')
 
 
@@ -210,14 +210,7 @@ if __name__ == "__main__":
     ########################################################################
 
     if device in["GPU", "CPU", "Ascend"]:
-        checkpoint_path = os.path.join("logs", args.tag, "test")
-        os.makedirs(checkpoint_path, exist_ok=True)
-
-        suffix = str(args.dataset)
-
-        # time_msg = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-        ckpt_path = osp.join(checkpoint_path, "{}_performance.txt".format(suffix))
-        log_file = open(ckpt_path, "w", encoding="utf-8")
+        log_file = open(args.dataset + "_eval_performance.txt", "w", encoding="utf-8")
 
         print('Args: {}'.format(args))
         print('Args: {}'.format(args), file=log_file)

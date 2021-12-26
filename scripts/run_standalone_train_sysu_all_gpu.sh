@@ -14,9 +14,9 @@
 # limitations under the License.
 # ============================================================================
 
-if [ $# != 2 ]
+if [ $# != 3 ]
 then
-    echo "Usage: $0 [DATASET_PATH] [CHECKPOINT_PATH]"
+    echo "Usage: $0 [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]"
 exit 1
 fi
 
@@ -45,34 +45,32 @@ fi
 
 ulimit -u unlimited
 export DEVICE_NUM=1
-export DEVICE_ID=0
+export DEVICE_ID=$3
 export RANK_SIZE=$DEVICE_NUM
 export RANK_ID=0
 
-if [ -d "train" ];
+if [ -d "train_sysu_all" ];
 then
-    rm -rf ./train
+    rm -rf ./train_sysu_all
 fi
-mkdir ./train
-cp ../*.py ./train
-cp *.sh ./train
-cp -r ../src ./train
-cd ./train || exit
+mkdir ./train_sysu_all
+cp ../*.py ./train_sysu_all
+cp -r ../src ./train_sysu_all
+cd ./train_sysu_all || exit
 env > env.log
-echo "start evaluation for device $DEVICE_ID"
+echo "start training for device $DEVICE_ID"
 
 python train.py \
 --MSmode GRAPH_MODE \
 --dataset SYSU \
---data-path $PATH1 \
+--data_path $PATH1 \
 --optim adam \
 --lr 0.0035 \
---device-target GPU \
+--device_target GPU \
 --gpu $DEVICE_ID \
 --pretrain $PATH2 \
---tag "sysu_all" \
---loss-func id+tri \
---sysu-mode all \
---epoch 80 \
---print-per-step 100 &> log &
+--loss_func id+tri \
+--sysu_mode all \
+--epoch 60 \
+--print_per_step 100 &> log &
 cd ..

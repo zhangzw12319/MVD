@@ -14,9 +14,9 @@
 # limitations under the License.
 # ============================================================================
 
-if [ $# != 2 ]
+if [ $# != 3 ]
 then
-    echo "Usage: $0 [DATASET_PATH] [CHECKPOINT_PATH]"
+    echo "Usage: $0 [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]"
 exit 1
 fi
 
@@ -45,35 +45,33 @@ fi
 
 ulimit -u unlimited
 export DEVICE_NUM=1
-export DEVICE_ID=0
+export DEVICE_ID=$3
 export RANK_SIZE=$DEVICE_NUM
 export RANK_ID=0
 
-if [ -d "train" ];
+if [ -d "train_regdb_v2i" ];
 then
-    rm -rf ./train
+    rm -rf ./train_regdb_v2i
 fi
-mkdir ./train
-cp ../*.py ./train
-cp *.sh ./train
-cp -r ../src ./train
-cd ./train || exit
+mkdir ./train_regdb_v2i
+cp ../*.py ./train_regdb_v2i
+cp -r ../src ./train_regdb_v2i
+cd ./train_regdb_v2i || exit
 env > env.log
-echo "start evaluation for device $DEVICE_ID"
+echo "start training for device $DEVICE_ID"
 
 python train.py \
 --MSmode GRAPH_MODE \
 --dataset RegDB \
---data-path $PATH1 \
+--data_path $PATH1 \
 --optim adam \
 --lr 0.0035 \
---device-target GPU \
+--device_target GPU \
 --gpu $DEVICE_ID \
 --pretrain $PATH2 \
---tag "regdb_v2i" \
---loss-func id+tri \
+--loss_func id+tri \
 --trial 1 \
 --regdb_mode v2i \
 --epoch 80 \
---print-per-step 30 &> log &
+--print_per_step 30 &> log &
 cd ..

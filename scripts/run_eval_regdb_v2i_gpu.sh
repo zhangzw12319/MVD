@@ -14,9 +14,9 @@
 # limitations under the License.
 # ============================================================================
 
-if [ $# != 2 ]
+if [ $# != 3 ]
 then
-    echo "Usage: bash $0 [DATASET_PATH] [CHECKPOINT_PATH]"
+    echo "Usage: bash $0 [DATASET_PATH] [CHECKPOINT_PATH] [DEVICE_ID]"
 exit 1
 fi
 
@@ -45,30 +45,28 @@ fi
 
 ulimit -u unlimited
 export DEVICE_NUM=1
-export DEVICE_ID=0
+export DEVICE_ID=$3
 export RANK_SIZE=$DEVICE_NUM
 export RANK_ID=0
 
-if [ -d "eval" ];
+if [ -d "eval_regdb_v2i" ];
 then
-    rm -rf ./eval
+    rm -rf ./eval_regdb_v2i
 fi
-mkdir ./eval
-cp ../*.py ./eval
-cp *.sh ./eval
-cp -r ../src ./eval
-cd ./eval || exit
+mkdir ./eval_regdb_v2i
+cp ../*.py ./eval_regdb_v2i
+cp -r ../src ./eval_regdb_v2i
+cd ./eval_regdb_v2i || exit
 env > env.log
 echo "start evaluation for device $DEVICE_ID"
 
 python eval.py \
 --MSmode GRAPH_MODE \
 --dataset RegDB \
---data-path $PATH1 \
---device-target GPU \
+--data_path $PATH1 \
+--device_target GPU \
 --gpu $DEVICE_ID \
 --resume $PATH2 \
---regdb-mode v2i \
---tag "regdb_v2i" \
+--regdb_mode v2i \
 --trial 1 &> log &
 cd ..
